@@ -52,3 +52,24 @@
   --radius-md:  10px;
   --radius-lg:  14px;
 }
+
+:root {
+  --background:          #F4F4F4;
+  --foreground:          #1A2B4A;
+  --card:                #FFFFFF;
+  --card-foreground:     #1A2B4A;
+  --primary:             #003366;
+  --primary-foreground:  #FFFFFF;
+  --secondary:           #EEF3FA;
+  --secondary-foreground:#1A2B4A;
+  --muted:               #F5F7FF;
+  --muted-foreground:    #9BAAC4;
+  --accent:              #EEF3FA;
+  --accent-foreground:   #003366;
+  --destructive:         #E74C3C;
+  --destructive-foreground: #FFFFFF;
+  --border:              #F0F2F7;
+  --input:               #E8ECF4;
+  --ring:                #003366;
+  --radius:              0.625rem;
+}
