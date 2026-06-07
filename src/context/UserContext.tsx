@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { type UserInfo, type UserRole, getHighestRole } from '../types/user';
+import { type UserInfo, type UserRole, getHighestRole } from '@/types/user';
 
 // ─── Mock Users (ganti dengan data dari API/auth nanti) ───────────────────────
 
