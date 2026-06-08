@@ -52,3 +52,9 @@ export interface Issue {
   count:     number;
   sentiment: Sentiment;
 }
+
+/** Shape data yang diterima HBarChart dan dikembalikan fungsi grouping */
+export interface GroupDataItem {
+  label: string;
+  avg:   number;
+}

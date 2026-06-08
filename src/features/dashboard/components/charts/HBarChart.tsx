@@ -21,6 +21,9 @@ interface HBarChartProps {
   /** Tinggi chart dalam px, default 260 */
   height?:        number;
   /** Urutan: desc = tertinggi di atas (default), asc = terendah di atas */
+
+  axisWidth?: number; // default 42, item charts butuh lebih lebar
+
   sortOrder?:     'asc' | 'desc';
   /** Garis referensi vertikal opsional, misal batas nilai minimum */
   referenceLine?: {
@@ -39,6 +42,7 @@ export function HBarChart({
   color,
   domain        = [3.0, 4.0],
   height        = 260,
+  axisWidth     = 42,
   sortOrder     = 'desc',
   referenceLine,
   labelFormatter = v => v.toFixed(2),
@@ -66,7 +70,7 @@ export function HBarChart({
           type="category"
           dataKey="label"
           tick={AXIS_STYLE}
-          width={42}
+          width={axisWidth}
         />
 
         <Tooltip formatter={(v: any) => typeof v === 'number' ? labelFormatter(v) : String(v ?? '')} />
