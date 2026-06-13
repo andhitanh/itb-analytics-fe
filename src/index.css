@@ -73,3 +73,5 @@
   --ring:                #003366;
   --radius:              0.625rem;
 }
+
+.nav-icon-active { filter: brightness(0) invert(1) }
