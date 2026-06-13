@@ -3,8 +3,9 @@ import { useUser } from '@/context/UserContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarItem } from './sidebar/sidebar-item';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import logoSidebar from '@/assets/images/logo-sidebar.png';
 
 import dashboardIcon    from '@/assets/icons/dashboard-icon.svg';
 import fullDataIcon     from '@/assets/icons/full-data-icon.svg';
@@ -53,12 +54,12 @@ export default function Sidebar() {
         collapsed ? 'justify-center py-6 px-0' : 'px-5 py-5'
       )}>
         <img
-          src="/logo-sidebar.png"
+          src={logoSidebar}
           alt="Aplikasi Akademik ITB"
           className={cn(
             'object-contain transition-all duration-[280ms]',
             collapsed
-              ? 'h-[30px] max-w-[34px] object-center'
+              ? 'h-[30px] max-w-[34x] object-center'
               : 'h-[34px] max-w-[180px] object-left'
           )}
         />

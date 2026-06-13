@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useMatch } from 'react-router-dom';
 import {
   Tooltip,
   TooltipContent,
@@ -9,50 +9,43 @@ import { cn } from '@/lib/utils';
 
 interface SidebarItemProps {
   label:     string;
-  icon:      string;        // path ke SVG asset
+  icon:      string;
   path:      string;
   collapsed: boolean;
 }
 
 export function SidebarItem({ label, icon, path, collapsed }: SidebarItemProps) {
+  const isActive = !!useMatch(path);
+
   const link = (
     <NavLink
       to={path}
-      className={({ isActive }) =>
-        cn(
-          'flex items-center rounded transition-all duration-150 select-none w-full',
-          collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-          isActive
-            ? 'bg-primary text-white'
-            : 'text-text-mid hover:bg-active hover:text-primary'
-        )
-      }
+      className={cn(
+        'flex items-center rounded transition-all duration-150 select-none w-full',
+        collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+        isActive
+          ? 'bg-primary text-white'
+          : 'text-text-mid hover:bg-active hover:text-primary'
+      )}
     >
-      {({ isActive }) => (
-        <>
-          <img
-            src={icon}
-            alt=""
-            aria-hidden="true"
-            className={cn(
-              'w-5 h-5 object-contain shrink-0',
-              isActive ? 'brightness-0 invert' : ''  // icon putih saat aktif
-            )}
-          />
-          {!collapsed && (
-            <span className={cn(
-              'text-[13.5px] tracking-wide whitespace-nowrap overflow-hidden',
-              isActive ? 'font-semibold' : 'font-medium'
-            )}>
-              {label}
-            </span>
-          )}
-        </>
+      <img
+        src={icon}
+        alt=""
+        aria-hidden="true"
+        className={isActive ? 'nav-icon-active' : undefined}
+        style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
+      />
+      {!collapsed && (
+        <span className={cn(
+          'text-[13.5px] tracking-wide whitespace-nowrap overflow-hidden',
+          isActive ? 'font-semibold' : 'font-medium'
+        )}>
+          {label}
+        </span>
       )}
     </NavLink>
   );
 
-  // Saat collapsed, bungkus dengan Tooltip
   if (collapsed) {
     return (
       <TooltipProvider delayDuration={100}>
