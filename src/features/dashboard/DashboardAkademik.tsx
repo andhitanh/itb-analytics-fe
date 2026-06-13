@@ -73,7 +73,7 @@ export default function DashboardAkademik() {
       <AkademikFilterBar filter={filter} onChange={setFilter} />
 
       {/* Tab section */}
-      <Tabs defaultValue="info-umum">
+      <Tabs defaultValue="info-umum" className="gap-0">
 
         {/* Tab nav */}
         <div className="bg-surface rounded-t-[14px] border border-border border-b-0 overflow-hidden">
