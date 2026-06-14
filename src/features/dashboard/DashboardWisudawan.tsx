@@ -29,7 +29,7 @@ const TAB_TRIGGER = cn(
   'px-4 py-[14px] rounded-none border-b-2 border-transparent bg-transparent shadow-none',
   'text-[13px] font-medium whitespace-nowrap transition-colors duration-150',
   'data-[state=inactive]:text-neutral',
-  'data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:font-bold',
+    'data-[state=active]:border-b-primary data-[state=active]:border-x-transparent data-[state=active]:border-t-transparent data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:font-bold',
   'hover:text-text-dark',
 );
 
