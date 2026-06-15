@@ -1,46 +1,39 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { type UserInfo, type UserRole, getHighestRole } from '@/types/user';
+import { type UserInfo, type RoleEntry, resolveDefaultRole } from '@/types/user';
 
-// ─── Mock Users (ganti dengan data dari API/auth nanti) ───────────────────────
+// ─── Mock Data ────────────────────────────────────────────────────────────────
 
-const MOCK_ADMIN_USER: UserInfo = {
-  id: '1',
-  name: 'Budi Santoso',
-  email: 'budi.santoso@itb.ac.id',
-  roles: ['admin'],
-  activeRole: 'admin',
+const MOCK_ROLES: RoleEntry[] = [
+  { userRoleId: 1, role: 'admin',      dosenId: null, kkId: null, noPs: null,  kdFak: null,   isPrime: false },
+  { userRoleId: 2, role: 'direktorat', dosenId: null, kkId: null, noPs: null,  kdFak: null,   isPrime: false },
+  { userRoleId: 3, role: 'dekan',      dosenId: 666,  kkId: null, noPs: null,  kdFak: 'STEI', isPrime: true  },
+  { userRoleId: 4, role: 'kaprodi',    dosenId: 666,  kkId: null, noPs: 161,   kdFak: null,   isPrime: false },
+  { userRoleId: 5, role: 'kaprodi',    dosenId: 666,  kkId: null, noPs: 198,   kdFak: null,   isPrime: false },
+];
+
+const MOCK_USER: UserInfo = {
+  userId:         '9090901111',
+  name:           'Rina Wijaya',
+  email:          'rina.wijaya@itb.ac.id',
+  availableRoles: MOCK_ROLES,
+  activeRole:     resolveDefaultRole(MOCK_ROLES),
 };
-
-// Contoh multi-role user (untuk testing):
-// const MOCK_MULTI_USER: UserInfo = {
-//   id: '2',
-//   name: 'Rina Wijaya',
-//   email: 'rina.wijaya@itb.ac.id',
-//   roles: ['kaprodi', 'dosen'],
-//   activeRole: 'kaprodi',
-//   faculty: 'STEI',
-//   department: 'Teknik Informatika',
-// };
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
 interface UserContextType {
-  user: UserInfo;
-  setActiveRole: (role: UserRole) => void;
+  user:          UserInfo;
+  setActiveRole: (userRoleId: number) => void;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserInfo>(() => ({
-    ...MOCK_ADMIN_USER,
-    activeRole: getHighestRole(MOCK_ADMIN_USER.roles),
-  }));
+  const [user, setUser] = useState<UserInfo>(MOCK_USER);
 
-  const setActiveRole = (role: UserRole) => {
-    if (user.roles.includes(role)) {
-      setUser(prev => ({ ...prev, activeRole: role }));
-    }
+  const setActiveRole = (userRoleId: number) => {
+    const entry = user.availableRoles.find(r => r.userRoleId === userRoleId);
+    if (entry) setUser(prev => ({ ...prev, activeRole: entry }));
   };
 
   return (

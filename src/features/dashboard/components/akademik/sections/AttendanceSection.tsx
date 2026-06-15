@@ -18,7 +18,7 @@ export function AttendanceSection({
   color,
 }: AttendanceSectionProps) {
   const { user } = useUser();
-  const fullData = deriveAttendanceFull(filter, user.activeRole, type);
+  const fullData = deriveAttendanceFull(filter, user.activeRole.role, type);
   const chartData = fullData.map((d) => ({ label: d.label, avg: d.avg }));
   const avgCurr = fullData.reduce((s, d) => s + d.avg, 0) / fullData.length;
   const avgPrev = fullData.reduce((s, d) => s + d.prev, 0) / fullData.length;

@@ -59,7 +59,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
           <CardContent className="pt-5">
             <p className="text-[12px] font-semibold text-text-dark mb-2">Q1 — Informasi Luaran MK</p>
             <HBarChart
-              data={deriveQScoreGroup(filter, user.activeRole, 0)}
+              data={deriveQScoreGroup(filter, user.activeRole.role, 0)}
               color={chartColors.primary}
               domain={[3.0, 4.0]}
               height={180}
@@ -70,7 +70,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
           <CardContent className="pt-5">
             <p className="text-[12px] font-semibold text-text-dark mb-2">Q2 — Perkuliahan ke Luaran</p>
             <HBarChart
-              data={deriveQScoreGroup(filter, user.activeRole, 1)}
+              data={deriveQScoreGroup(filter, user.activeRole.role, 1)}
               color={chartColors.mid}
               domain={[3.0, 4.0]}
               height={180}
@@ -81,7 +81,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
           <CardContent className="pt-5">
             <p className="text-[12px] font-semibold text-text-dark mb-2">Q3 — Mahasiswa Mencapai Luaran</p>
             <HBarChart
-              data={deriveQScoreGroup(filter, user.activeRole, 2)}
+              data={deriveQScoreGroup(filter, user.activeRole.role, 2)}
               color={chartColors.light}
               domain={[3.0, 4.0]}
               height={180}

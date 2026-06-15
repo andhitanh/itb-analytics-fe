@@ -1,24 +1,93 @@
 import { useUser } from '@/context/UserContext';
-import { type UserRole, ROLE_LABELS, getAffiliationLabel, getInitials } from '@/types/user';
+import {
+  type RoleEntry,
+  ROLE_LABELS,
+  getRoleScopeLabel,
+  getInitials,
+} from '@/types/user';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, LogOut, Shield, Building2, BookOpen, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { UserRole } from '@/types/user';
+
+// ─── Role Icon ────────────────────────────────────────────────────────────────
+
+const ROLE_ICON: Record<UserRole, React.ReactNode> = {
+  admin:           <Shield    className="h-3.5 w-3.5" />,
+  direktorat:      <Building2 className="h-3.5 w-3.5" />,
+  dekan:           <Building2 className="h-3.5 w-3.5" />,
+  jajaran_dekanat: <Building2 className="h-3.5 w-3.5" />,
+  kaprodi:         <BookOpen  className="h-3.5 w-3.5" />,
+  jajaran_prodi:   <BookOpen  className="h-3.5 w-3.5" />,
+  dosen:           <User      className="h-3.5 w-3.5" />,
+};
+
+// ─── Dropdown Item ────────────────────────────────────────────────────────────
+
+function RoleItem({
+  entry,
+  isActive,
+  onSelect,
+}: {
+  entry:    RoleEntry;
+  isActive: boolean;
+  onSelect: () => void;
+}) {
+  const scopeLabel = getRoleScopeLabel(entry);
+
+  return (
+    <DropdownMenuItem
+      onClick={onSelect}
+      className={cn(
+        'flex items-center gap-2.5 rounded-[7px] px-3 py-2.5 cursor-pointer select-none',
+        isActive
+          ? 'bg-active text-primary'
+          : 'text-text-mid hover:bg-subtle',
+      )}
+    >
+      {/* Role icon */}
+      <span className={cn(
+        'flex items-center justify-center w-6 h-6 rounded-md shrink-0',
+        isActive ? 'bg-primary/10 text-primary' : 'bg-border text-neutral',
+      )}>
+        {ROLE_ICON[entry.role]}
+      </span>
+
+      {/* Role name + scope */}
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          'text-[12.5px] leading-tight',
+          isActive ? 'font-semibold text-primary' : 'font-medium text-text-dark',
+        )}>
+          {ROLE_LABELS[entry.role]}
+        </p>
+        <p className="text-[11px] text-neutral truncate mt-0.5">{scopeLabel}</p>
+      </div>
+
+      {/* Active checkmark */}
+      {isActive && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+    </DropdownMenuItem>
+  );
+}
+
+// ─── Profile Section ──────────────────────────────────────────────────────────
 
 export function ProfileSection() {
   const { user, setActiveRole } = useUser();
-  const hasMultiRoles = user.roles.length > 1;
-  const affiliation = getAffiliationLabel(user);
+  const { activeRole, availableRoles } = user;
+  const hasMultiRoles = availableRoles.length > 1;
+  const scopeLabel   = getRoleScopeLabel(activeRole);
 
-  // Kalau hanya satu role, tampilkan info saja tanpa dropdown
   const trigger = (
-    <div className="flex items-center gap-2 px-0.5 text-left">
+    <div className="flex items-center gap-2 px-0.5 py-0.5 text-left">
       <Avatar className="w-[38px] h-[38px] border-2 border-border-mid shrink-0">
         <AvatarImage src={user.avatarUrl} alt={user.name} />
         <AvatarFallback className="bg-primary text-white text-[13px] font-bold">
@@ -31,29 +100,26 @@ export function ProfileSection() {
           {user.name}
         </span>
         <span className="text-[12px] font-medium text-primary whitespace-nowrap">
-          {ROLE_LABELS[user.activeRole]}
+          {ROLE_LABELS[activeRole.role]}
         </span>
         <span className="text-[11.5px] text-neutral truncate max-w-[180px]">
-          {affiliation}
+          {scopeLabel}
         </span>
       </div>
 
-      {hasMultiRoles && (
-        <ChevronDown className="h-3 w-3 text-neutral shrink-0 ml-0.5 transition-transform duration-200" />
-      )}
+      <ChevronDown className="h-3 w-3 text-neutral shrink-0 ml-0.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
     </div>
   );
 
-  // Tidak punya multi-role — tampilkan tanpa interaksi
-  if (!hasMultiRoles) {
-    return <div>{trigger}</div>;
-  }
+  const handleLogout = () => {
+    // TODO: panggil auth logout API, clear session, redirect ke /login
+    console.log('logout');
+  };
 
-  // Punya multi-role — bungkus dengan DropdownMenu
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="rounded-lg hover:bg-subtle transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-primary">
+        <button className="group rounded-lg hover:bg-subtle transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-primary">
           {trigger}
         </button>
       </DropdownMenuTrigger>
@@ -61,29 +127,45 @@ export function ProfileSection() {
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="min-w-[200px] rounded-[10px] border-border-mid shadow-[0_8px_24px_rgba(0,0,0,0.08)] p-1"
+        className="min-w-[260px] rounded-[12px] border-border-mid shadow-[0_8px_24px_rgba(0,0,0,0.10)] p-1.5"
       >
-        <DropdownMenuLabel className="px-3 pb-2 pt-1.5 text-[11px] text-neutral font-semibold uppercase tracking-wide border-b border-border mb-1">
-          Pilih Peran
-        </DropdownMenuLabel>
+        {/* Role switcher — hanya tampil jika multi-role */}
+        {hasMultiRoles && (
+          <>
+            <DropdownMenuLabel className="flex items-center gap-2 px-2.5 pb-2 pt-1 border-b border-border mb-1.5">
+              <span className="text-[11px] text-neutral font-semibold uppercase tracking-wide">
+                Pilih Peran Aktif
+              </span>
+              <span className="ml-auto text-[10.5px] text-neutral bg-border px-1.5 py-0.5 rounded-full">
+                {availableRoles.length} peran
+              </span>
+            </DropdownMenuLabel>
 
-        {user.roles.map((role: UserRole) => (
-          <DropdownMenuItem
-            key={role}
-            onClick={() => setActiveRole(role)}
-            className={cn(
-              'flex items-center justify-between rounded-[7px] px-3 py-2 text-[13px] cursor-pointer',
-              user.activeRole === role
-                ? 'bg-active text-primary font-semibold'
-                : 'text-text-mid font-normal hover:bg-subtle'
-            )}
-          >
-            {ROLE_LABELS[role]}
-            {user.activeRole === role && (
-              <Check className="h-3.5 w-3.5 text-primary" />
-            )}
-          </DropdownMenuItem>
-        ))}
+            <div className="flex flex-col gap-0.5">
+              {availableRoles.map(entry => (
+                <RoleItem
+                  key={entry.userRoleId}
+                  entry={entry}
+                  isActive={entry.userRoleId === activeRole.userRoleId}
+                  onSelect={() => setActiveRole(entry.userRoleId)}
+                />
+              ))}
+            </div>
+
+            <DropdownMenuSeparator className="my-1.5" />
+          </>
+        )}
+
+        {/* Logout */}
+        <DropdownMenuItem
+          onClick={handleLogout}
+          className="flex items-center gap-2.5 rounded-[7px] px-3 py-2.5 cursor-pointer text-danger hover:bg-danger/8 focus:bg-danger/8 focus:text-danger"
+        >
+          <span className="flex items-center justify-center w-6 h-6 rounded-md bg-danger/10 text-danger shrink-0">
+            <LogOut className="h-3.5 w-3.5" />
+          </span>
+          <span className="text-[12.5px] font-medium">Keluar</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

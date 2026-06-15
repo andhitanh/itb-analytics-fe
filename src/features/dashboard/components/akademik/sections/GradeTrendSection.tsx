@@ -80,7 +80,7 @@ interface GradeTrendSectionProps {
 
 export function GradeTrendSection({ filter }: GradeTrendSectionProps) {
   const { user } = useUser();
-  const gradeGroupData = deriveGradeGroup(filter, user.activeRole);
+  const gradeGroupData = deriveGradeGroup(filter, user.activeRole.role);
 
   const latest = TEMPORAL_GRADE[TEMPORAL_GRADE.length - 1];
   const prev = TEMPORAL_GRADE[TEMPORAL_GRADE.length - 2];

@@ -74,7 +74,7 @@ export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
   const bottomQItems = [...allQItems].sort((a, b) => a.value - b.value).slice(0, 5);
 
   // Faculty avg bar (filter-aware)
-  const overallGroupData = deriveOverallAvgGroup(filter, user.activeRole);
+  const overallGroupData = deriveOverallAvgGroup(filter, user.activeRole.role);
   const groupLabel       = filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas';
 
   return (
