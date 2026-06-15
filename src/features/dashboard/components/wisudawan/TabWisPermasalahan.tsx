@@ -1,5 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { StatCard } from '@/components/ui/stat-card';
 import { MASALAH_PREVALENSI, LAYANAN_DUKUNGAN } from '@/features/dashboard/mocks/mockDataWisudawan';
 import { chartColors, AXIS_STYLE } from '@/styles/chart-token';
 import type { WisudawanFilter } from '@/features/dashboard/types';
@@ -9,16 +10,53 @@ interface TabWisPermasalahanProps {
 }
 
 // Data transformation — dilakukan di level tab karena spesifik ke visualisasi ini
-const AKADEMIS   = MASALAH_PREVALENSI.find(m => m.key === 'akademis')!;
-const COMBINED   = MASALAH_PREVALENSI.filter(m => m.key !== 'akademis').map(m => ({
-  label:         m.label.replace('Masalah ', ''),
-  prevalensi:    m.pct,
+const AKADEMIS = MASALAH_PREVALENSI.find(m => m.key === 'akademis')!;
+const NON_AKADEMIS = MASALAH_PREVALENSI.filter(m => m.key !== 'akademis');
+const COMBINED = NON_AKADEMIS.map(m => ({
+  label:          m.label.replace('Masalah ', ''),
+  prevalensi:     m.pct,
   dampakAkademis: m.impactPct,
 }));
+
+// Stat card derivations
+const highestImpact    = [...NON_AKADEMIS].sort((a, b) => b.impactPct - a.impactPct)[0];
+const highestPrevalensi = [...NON_AKADEMIS].sort((a, b) => b.pct - a.pct)[0];
+const lowestLayanan    = [...LAYANAN_DUKUNGAN].sort((a, b) => a.avg - b.avg)[0];
+const avgLayanan       = parseFloat(
+  (LAYANAN_DUKUNGAN.reduce((s, d) => s + d.avg, 0) / LAYANAN_DUKUNGAN.length).toFixed(2)
+);
 
 export default function TabWisPermasalahan({ filter: _filter }: TabWisPermasalahanProps) {
   return (
     <div className="flex flex-col gap-4">
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-4 gap-3">
+        <StatCard
+          label="Dampak Akademis Tertinggi"
+          value={`${highestImpact.impactPct}%`}
+          sub={highestImpact.label.replace('Masalah ', '')}
+          valueClassName="text-danger"
+        />
+        <StatCard
+          label="Masalah Terbanyak Dialami"
+          value={`${highestPrevalensi.pct}%`}
+          sub={highestPrevalensi.label.replace('Masalah ', '')}
+          valueClassName="text-warning"
+        />
+        <StatCard
+          label="Layanan Dukungan Terendah"
+          value={`${lowestLayanan.avg.toFixed(2)} / 5`}
+          sub={lowestLayanan.label}
+          valueClassName="text-danger"
+        />
+        <StatCard
+          label="Rata-Rata Kualitas Layanan"
+          value={`${avgLayanan.toFixed(2)} / 5`}
+          sub="Rata-rata 4 layanan dukungan"
+          valueClassName={avgLayanan >= 3.5 ? 'text-success' : avgLayanan >= 3.0 ? 'text-mid' : 'text-danger'}
+        />
+      </div>
 
       {/* Callout: masalah akademis */}
       <div className="flex items-center gap-4 px-5 py-3.5 rounded-xl bg-[#FFFBEB] border-[1.5px] border-[#FDE68A]">
