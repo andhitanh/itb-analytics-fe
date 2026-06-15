@@ -86,8 +86,8 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
                 <YAxis type="category" dataKey="faculty" tick={AXIS_STYLE} width={42} />
                 <Tooltip formatter={(v: any) => typeof v === 'number' ? `${v}%` : v} />
                 <Legend iconType="square" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="caseOnly" name="Case Method" stackId="a" fill={chartColors.primary} maxBarSize={16} />
-                <Bar dataKey="teamOnly" name="Team-Based"  stackId="a" fill={chartColors.mid}     maxBarSize={16} />
+                <Bar dataKey="caseMethod" name="Case Method" stackId="a" fill={chartColors.primary} maxBarSize={16} />
+                <Bar dataKey="teamBased"  name="Team-Based"  stackId="a" fill={chartColors.mid}     maxBarSize={16} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
