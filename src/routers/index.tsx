@@ -1,8 +1,5 @@
 /**
  * src/routers/index.tsx
- *
- * RequireAuth menunggu loading selesai sebelum memutuskan redirect,
- * mencegah flash redirect ke /login saat user sebenarnya sudah login.
  */
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
@@ -10,18 +7,34 @@ import MainLayout    from '@/layouts/MainLayout';
 import DashboardPage from '@/pages/DashboardPage';
 import LoginPage     from '@/pages/LoginPage';
 
+// Blokir akses ke halaman protected jika belum login.
+// loading = true → render null dulu, cegah flash redirect ke /login.
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useUser();
-
-  if (loading) return null; // atau <PageSpinner /> jika ada
+  if (loading)         return null;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+// Redirect user yang sudah login jika coba akses /login secara manual.
+function RedirectIfAuth({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useUser();
+  if (loading)        return null;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/login"
+        element={
+          <RedirectIfAuth>
+            <LoginPage />
+          </RedirectIfAuth>
+        }
+      />
 
       <Route
         path="/"

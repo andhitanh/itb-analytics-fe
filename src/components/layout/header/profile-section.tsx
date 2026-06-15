@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 import {
   type RoleEntry,
@@ -53,7 +54,6 @@ function RoleItem({
           : 'text-text-mid hover:bg-subtle',
       )}
     >
-      {/* Role icon */}
       <span className={cn(
         'flex items-center justify-center w-6 h-6 rounded-md shrink-0',
         isActive ? 'bg-primary/10 text-primary' : 'bg-border text-neutral',
@@ -61,7 +61,6 @@ function RoleItem({
         {ROLE_ICON[entry.role]}
       </span>
 
-      {/* Role name + scope */}
       <div className="flex-1 min-w-0">
         <p className={cn(
           'text-[12.5px] leading-tight',
@@ -72,7 +71,6 @@ function RoleItem({
         <p className="text-[11px] text-neutral truncate mt-0.5">{scopeLabel}</p>
       </div>
 
-      {/* Active checkmark */}
       {isActive && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
     </DropdownMenuItem>
   );
@@ -81,46 +79,48 @@ function RoleItem({
 // ─── Profile Section ──────────────────────────────────────────────────────────
 
 export function ProfileSection() {
-  const { user, setActiveRole } = useUser();
+  const { user, setActiveRole, logout } = useUser();
+  const navigate = useNavigate();
+
+  // user dijamin non-null di sini karena ProfileSection hanya dirender
+  // di dalam RequireAuth (MainLayout). Tapi guard tetap dipasang untuk safety.
+  if (!user) return null;
+
   const { activeRole, availableRoles } = user;
   const hasMultiRoles = availableRoles.length > 1;
-  const scopeLabel   = getRoleScopeLabel(activeRole);
+  const scopeLabel    = getRoleScopeLabel(activeRole);
 
-  const trigger = (
-    <div className="flex items-center gap-2 px-0.5 py-0.5 text-left">
-      <Avatar className="w-[38px] h-[38px] border-2 border-border-mid shrink-0">
-        <AvatarImage src={user.avatarUrl} alt={user.name} />
-        <AvatarFallback className="bg-primary text-white text-[13px] font-bold">
-          {getInitials(user.name)}
-        </AvatarFallback>
-      </Avatar>
-
-      <div className="flex flex-col gap-px min-w-0">
-        <span className="text-[13.5px] font-semibold text-text-dark truncate max-w-[180px]">
-          {user.name}
-        </span>
-        <span className="text-[12px] font-medium text-primary whitespace-nowrap">
-          {ROLE_LABELS[activeRole.role]}
-        </span>
-        <span className="text-[11.5px] text-neutral truncate max-w-[180px]">
-          {scopeLabel}
-        </span>
-      </div>
-
-      <ChevronDown className="h-3 w-3 text-neutral shrink-0 ml-0.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-    </div>
-  );
-
-  const handleLogout = () => {
-    // TODO: panggil auth logout API, clear session, redirect ke /login
-    console.log('logout');
-  };
+  async function handleLogout() {
+    await logout();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="group rounded-lg hover:bg-subtle transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-primary">
-          {trigger}
+          <div className="flex items-center gap-2 px-0.5 py-0.5 text-left">
+            <Avatar className="w-[38px] h-[38px] border-2 border-border-mid shrink-0">
+              <AvatarImage src={user.avatarUrl} alt={user.name} />
+              <AvatarFallback className="bg-primary text-white text-[13px] font-bold">
+                {getInitials(user.name)}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="flex flex-col gap-px min-w-0">
+              <span className="text-[13.5px] font-semibold text-text-dark truncate max-w-[180px]">
+                {user.name}
+              </span>
+              <span className="text-[12px] font-medium text-primary whitespace-nowrap">
+                {ROLE_LABELS[activeRole.role]}
+              </span>
+              <span className="text-[11.5px] text-neutral truncate max-w-[180px]">
+                {scopeLabel}
+              </span>
+            </div>
+
+            <ChevronDown className="h-3 w-3 text-neutral shrink-0 ml-0.5 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </div>
         </button>
       </DropdownMenuTrigger>
 

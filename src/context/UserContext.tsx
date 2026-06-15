@@ -3,11 +3,18 @@
  *
  * Sumber kebenaran tunggal untuk state auth + user di seluruh aplikasi.
  *
- * Flow:
- *   1. Mount → panggil GET /api/auth/me
- *   2a. 200  → set user, isAuthenticated = true
- *   2b. 401  → user = null, isAuthenticated = false (belum/sudah tidak login)
- *   3. logout() → POST /api/auth/logout → reset state → router redirect ke /login
+ * Flow login:
+ *   App mount → GET /api/auth/me
+ *     200  → user terisi, isAuthenticated = true
+ *     401  → user = null, isAuthenticated = false
+ *
+ * Flow session expiry (mid-session):
+ *   axios interceptor (lib/axios.ts) dispatch 'auth:unauthorized'
+ *   → listener di sini reset user → RequireAuth redirect ke /login
+ *
+ * Flow logout:
+ *   logout() → POST /api/auth/logout → reset user
+ *   → pemanggil (profile-section) navigate ke /login
  */
 import {
   createContext,
@@ -41,12 +48,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user,    setUser]    = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Cek session yang ada saat aplikasi pertama dimuat.
+  // ── Restore session on mount ───────────────────────────────────────────────
   useEffect(() => {
     fetchMe()
       .then(setUser)
       .catch((err) => {
-        // 401 = belum login / session expired → bukan error yang perlu dilaporkan
+        // 401 = belum / tidak lagi login → kondisi normal, bukan error
         if (!axios.isAxiosError(err) || err.response?.status !== 401) {
           console.error('[Auth] Gagal fetch /me:', err);
         }
@@ -55,6 +62,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // ── Handle session expiry mid-session ─────────────────────────────────────
+  // axios interceptor dispatch 'auth:unauthorized' saat terima 401.
+  // Di sini kita reset user → isAuthenticated jadi false
+  // → RequireAuth otomatis redirect ke /login.
+  useEffect(() => {
+    function onUnauthorized() {
+      setUser(null);
+    }
+    window.addEventListener('auth:unauthorized', onUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', onUnauthorized);
+  }, []);
+
+  // ── Role switcher (local only) ─────────────────────────────────────────────
+  // Backend PATCH /api/auth/role masih dikomentari.
+  // Saat backend enable endpoint tersebut, tambahkan API call di sini.
   const setActiveRole = useCallback((userRoleId: number) => {
     setUser(prev => {
       if (!prev) return prev;
@@ -65,11 +87,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // ── Logout ─────────────────────────────────────────────────────────────────
   const logout = useCallback(async () => {
     try {
       await postLogout();
     } finally {
-      // Reset state meskipun request logout gagal di sisi server
+      // Reset state meskipun request gagal — sisi browser tetap bersih
       setUser(null);
     }
   }, []);
