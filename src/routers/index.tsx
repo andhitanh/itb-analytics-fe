@@ -1,21 +1,34 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import MainLayout          from '@/layouts/MainLayout';
-import DashboardPage        from '@/pages/DashboardPage';
-// import ChatbotPage          from '@/pages/ChatbotPage';
-// import { PlaceholderPage }  from '@/pages/PlaceholderPage';
+import MainLayout   from '@/layouts/MainLayout';
+import DashboardPage from '@/pages/DashboardPage';
+import LoginPage     from '@/pages/LoginPage';
+import { useUser }  from '@/context/UserContext';
+
+// Sementara: anggap user sudah login jika ada di context.
+// Ketika auth nyata diimplementasi, ganti dengan cek session token.
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { user } = useUser();
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<MainLayout />}>
+      <Route path="/login" element={<LoginPage />} />
+
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <MainLayout />
+          </RequireAuth>
+        }
+      >
         <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard"      element={<DashboardPage />} />
-        {/* <Route path="chatbot"        element={<ChatbotPage />} /> */}
-        {/* <Route path="data-lengkap"   element={<PlaceholderPage slug="data-lengkap" />} />
-        <Route path="unggah-data"    element={<PlaceholderPage slug="unggah-data" />} />
-        <Route path="manajemen-akun" element={<PlaceholderPage slug="manajemen-akun" />} />
-        <Route path="pengaturan"     element={<PlaceholderPage slug="pengaturan" />} /> */}
+        <Route path="dashboard" element={<DashboardPage />} />
       </Route>
+
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
