@@ -1,14 +1,20 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import MainLayout   from '@/layouts/MainLayout';
+/**
+ * src/routers/index.tsx
+ *
+ * RequireAuth menunggu loading selesai sebelum memutuskan redirect,
+ * mencegah flash redirect ke /login saat user sebenarnya sudah login.
+ */
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { useUser } from '@/context/UserContext';
+import MainLayout    from '@/layouts/MainLayout';
 import DashboardPage from '@/pages/DashboardPage';
 import LoginPage     from '@/pages/LoginPage';
-import { useUser }  from '@/context/UserContext';
 
-// Sementara: anggap user sudah login jika ada di context.
-// Ketika auth nyata diimplementasi, ganti dengan cek session token.
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user } = useUser();
-  if (!user) return <Navigate to="/login" replace />;
+  const { isAuthenticated, loading } = useUser();
+
+  if (loading) return null; // atau <PageSpinner /> jika ada
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 

@@ -5,10 +5,13 @@ import chatbotImage from '@/assets/icons/chatbot-image.svg';
 import chartImage from '@/assets/icons/chart-image.svg';
 
 // ─── SSO Handler ──────────────────────────────────────────────────────────────
-// Redirect ke Microsoft SSO ITB. URL dikonfigurasi via env variable.
+// Redirect ke backend → backend build auth_uri Microsoft → redirect ke Microsoft.
+// Menggunakan window.location.href (bukan axios) karena ini full browser redirect,
+// bukan XHR — browser harus follow redirect dan set cookie setelah callback.
 function handleSSOLogin() {
-  const ssoUrl = import.meta.env.VITE_SSO_URL ?? '/api/auth/sso/microsoft';
-  window.location.href = ssoUrl;
+  const base = import.meta.env.VITE_API_URL ?? '';
+  const path = import.meta.env.VITE_AUTH_LOGIN_PATH;
+  window.location.href = `${base}${path}`;
 }
 
 // ─── Login Page ───────────────────────────────────────────────────────────────
