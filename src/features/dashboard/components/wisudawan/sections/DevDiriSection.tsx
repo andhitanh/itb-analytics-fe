@@ -5,6 +5,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { StatCard } from "@/components/ui/stat-card";
 import { HBarChart } from "@/features/dashboard/components/shared-charts/HBarChart";
 import {
   deriveSoftskillGroup,
@@ -13,6 +14,8 @@ import {
 import {
   SOFTSKILL_ITB_AVG,
   KARAKTER_ITB_AVG,
+  SOFTSKILL_FACULTY_AVG,
+  KARAKTER_FACULTY_AVG,
 } from "@/features/dashboard/mocks/mockDataWisudawan";
 import { chartColors } from "@/styles/chart-token";
 import type { WisudawanFilter } from "@/features/dashboard/types";
@@ -37,10 +40,54 @@ export function DevDiriSection({ filter }: DevDiriSectionProps) {
     ).toFixed(2),
   );
 
+  // SOFTSKILL_ITB_AVG sudah di-sort ascending → index 0 = terendah
+  const weakestSoftskill = SOFTSKILL_ITB_AVG[0];
+  const weakestKarakter  = KARAKTER_ITB_AVG[0];
+
+  // SOFTSKILL_FACULTY_AVG sudah di-sort ascending → index 0 = terendah
+  const weakestFaculty = (() => {
+    const combined = SOFTSKILL_FACULTY_AVG.map(s => {
+      const k = KARAKTER_FACULTY_AVG.find(k => k.faculty === s.faculty)!;
+      return { faculty: s.faculty, avg: parseFloat(((s.avg + k.avg) / 2).toFixed(2)) };
+    });
+    return combined.sort((a, b) => a.avg - b.avg)[0];
+  })();
+
+  const gap = parseFloat((karakterOverall - softskillOverall).toFixed(2));
+
   const groupLabel = filter.fakultas !== "semua" ? "Prodi" : "Fakultas";
 
   return (
     <div className="flex flex-col gap-4">
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-4 gap-3">
+        <StatCard
+          label="Aspek Softskill Terendah"
+          value={weakestSoftskill.avg.toFixed(2)}
+          sub={weakestSoftskill.label}
+          valueClassName="text-mid"
+        />
+        <StatCard
+          label="Aspek Karakter Terendah"
+          value={weakestKarakter.avg.toFixed(2)}
+          sub={weakestKarakter.label}
+          valueClassName="text-purple"
+        />
+        <StatCard
+          label="Gap Karakter vs Softskill"
+          value={`${gap > 0 ? '+' : ''}${gap.toFixed(2)}`}
+          sub={gap > 0 ? 'Karakter lebih tinggi' : gap < 0 ? 'Softskill lebih tinggi' : 'Setara'}
+          valueClassName={gap > 0 ? 'text-success' : gap < 0 ? 'text-danger' : 'text-neutral'}
+        />
+        <StatCard
+          label="Fakultas Skor Gabungan Terendah"
+          value={weakestFaculty.avg.toFixed(2)}
+          sub={weakestFaculty.faculty}
+          valueClassName="text-warning"
+        />
+      </div>
+
       {/* Baris 1: Softskill */}
       <div className="grid grid-cols-2 gap-4">
         <Card>
