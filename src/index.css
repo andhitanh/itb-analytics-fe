@@ -1,4 +1,18 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap');
+
+html {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body { background-color: #F4F4F4; color: #1A2B4A; }
+#root { width: 100%; height: 100vh; overflow: hidden; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #D1D9E8; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #B0BFDA; }
 
 @theme {
   /* Typography */
@@ -31,6 +45,25 @@
   --color-border:        #F0F2F7;
   --color-border-mid:    #E8ECF4;
 
+  /* Shadcn tokens — diperlukan agar bg-popover, bg-muted, bg-accent, dll. bekerja di Tailwind v4 */
+  --color-background:          #F4F4F4;
+  --color-foreground:          #1A2B4A;
+  --color-card:                #FFFFFF;
+  --color-card-foreground:     #1A2B4A;
+  --color-popover:             #FFFFFF;
+  --color-popover-foreground:  #1A2B4A;
+  --color-primary-foreground:  #FFFFFF;
+  --color-secondary:           #EEF3FA;
+  --color-secondary-foreground:#1A2B4A;
+  --color-muted:               #F5F7FF;
+  --color-muted-foreground:    #9BAAC4;
+  --color-accent:              #EEF3FA;
+  --color-accent-foreground:   #003366;
+  --color-destructive:         #E74C3C;
+  --color-destructive-foreground: #FFFFFF;
+  --color-input:               #E8ECF4;
+  --color-ring:                #003366;
+
   /* Score variants — untuk class map, bukan inline */
   --color-score-high-text:  #065F46;
   --color-score-high-bg:    #D1FAE5;
@@ -53,11 +86,14 @@
   --radius-lg:  14px;
 }
 
+/* Tetap dipertahankan untuk kompatibilitas dengan komponen shadcn yang baca var() langsung */
 :root {
   --background:          #F4F4F4;
   --foreground:          #1A2B4A;
   --card:                #FFFFFF;
   --card-foreground:     #1A2B4A;
+  --popover:             #FFFFFF;
+  --popover-foreground:  #1A2B4A;
   --primary:             #003366;
   --primary-foreground:  #FFFFFF;
   --secondary:           #EEF3FA;

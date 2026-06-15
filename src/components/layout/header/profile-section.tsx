@@ -5,7 +5,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -59,19 +58,24 @@ export function ProfileSection() {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="min-w-[200px]">
-        <DropdownMenuLabel className="text-[11px] text-neutral font-semibold uppercase tracking-wide">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className="min-w-[200px] rounded-[10px] border-border-mid shadow-[0_8px_24px_rgba(0,0,0,0.08)] p-1"
+      >
+        <DropdownMenuLabel className="px-3 pb-2 pt-1.5 text-[11px] text-neutral font-semibold uppercase tracking-wide border-b border-border mb-1">
           Pilih Peran
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
 
         {user.roles.map((role: UserRole) => (
           <DropdownMenuItem
             key={role}
             onClick={() => setActiveRole(role)}
             className={cn(
-              'flex items-center justify-between cursor-pointer',
-              user.activeRole === role && 'bg-active text-primary font-semibold'
+              'flex items-center justify-between rounded-[7px] px-3 py-2 text-[13px] cursor-pointer',
+              user.activeRole === role
+                ? 'bg-active text-primary font-semibold'
+                : 'text-text-mid font-normal hover:bg-subtle'
             )}
           >
             {ROLE_LABELS[role]}
