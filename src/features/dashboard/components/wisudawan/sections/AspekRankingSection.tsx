@@ -19,38 +19,35 @@ function toRankItems(aspek: typeof TOP5_ASPEK): ProgressRankItem[] {
   }));
 }
 
+function DomainLegend() {
+  return (
+    <div className="flex items-center gap-4 flex-wrap">
+      {Object.entries(SRC_COLOR).map(([src, color]) => (
+        <div key={src} className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+          <span className="text-[11.5px] font-medium text-text-mid">{src}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AspekRankingSection() {
   return (
-    <div className="grid grid-cols-[1fr_280px_280px] gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Legenda Domain Evaluasi</CardTitle>
-          <CardDescription>Warna sublabel menunjukkan asal domain aspek</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2.5">
-            {Object.entries(SRC_COLOR).map(([src, color]) => (
-              <div key={src} className="flex items-center gap-2.5">
-                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                <span className="text-[12.5px] font-semibold text-text-dark">{src}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
+    <div className="grid grid-cols-2 gap-4">
       <Card>
         <CardHeader>
           <CardTitle>Bottom 5 Aspek</CardTitle>
           <CardDescription>Skor terendah lintas semua domain</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className='flex flex-col gap-2'>
           <ProgressRankList
             items={toRankItems(BOTTOM5_ASPEK)}
             color={chartColors.danger}
             domain={[2.5, 4.0]}
             mode="bottom"
           />
+          <DomainLegend />
         </CardContent>
       </Card>
 
@@ -59,13 +56,14 @@ export function AspekRankingSection() {
           <CardTitle>Top 5 Aspek</CardTitle>
           <CardDescription>Skor tertinggi lintas semua domain</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className='flex flex-col gap-2'>
           <ProgressRankList
             items={toRankItems(TOP5_ASPEK)}
             color={chartColors.success}
             domain={[2.5, 4.0]}
             mode="top"
           />
+          <DomainLegend />
         </CardContent>
       </Card>
     </div>
