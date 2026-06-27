@@ -108,7 +108,7 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
             <CardDescription>Rata-rata persentase bobot per jenis komponen</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
+            <ResponsiveContainer width="100%" height={350}>
               <BarChart
                 data={GRADING_COMP}
                 layout="vertical"
@@ -147,7 +147,7 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
               data={deriveQScoreGroup(filter, user.activeRole.role, 7)}
               color={chartColors.warning}
               domain={[2.8, 4.0]}
-              height={220}
+              height={300}
             />
           </CardContent>
         </Card>
@@ -236,21 +236,21 @@ function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q4 — Perkuliahan Terorganisir</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 3)} color={chartColors.primary} domain={[3.0, 4.0]} height={180} />
+          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 3)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q5 — Komunikasi Efektif</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 4)} color={chartColors.mid}     domain={[3.0, 4.0]} height={180} />
+          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 4)} color={chartColors.mid}     domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q6 — Dosen Peduli Pencapaian</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 5)} color={chartColors.light}   domain={[3.0, 4.0]} height={180} />
+          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 5)} color={chartColors.light}   domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q7 — Dosen Berlaku Adil</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 6)} color={chartColors.primary} domain={[3.0, 4.0]} height={180} />
+          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 6)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
       </div>
     </div>
@@ -295,11 +295,11 @@ function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q11 — Mahasiswa Berusaha Sungguh-sungguh</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 10)} color={chartColors.mid}     domain={[3.0, 4.0]} height={180} />
+          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 10)} color={chartColors.mid}     domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q12 — Pengalaman Belajar Positif</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 11)} color={chartColors.primary} domain={[3.0, 4.0]} height={180} />
+          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 11)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
       </div>
     </div>
@@ -327,11 +327,11 @@ function SubTabSarana({ filter }: { filter: AkademikFilter }) {
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q9 — Sarana Prasarana Memadai</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 8)} color={chartColors.warning} domain={[3.0, 4.0]} height={220} />
+          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 8)} color={chartColors.warning} domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q10 — Fasilitas Pendukung di Luar Kuliah</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 9)} color={chartColors.light}   domain={[3.0, 4.0]} height={220} />
+          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 9)} color={chartColors.light}   domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
       </div>
     </div>
