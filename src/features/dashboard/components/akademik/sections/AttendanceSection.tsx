@@ -40,7 +40,7 @@ export function AttendanceSection({
         data={chartData}
         color={color}
         domain={[70, 100]}
-        height={180}
+        height={300}
         labelFormatter={(v) => `${v}%`}
       />
     </div>

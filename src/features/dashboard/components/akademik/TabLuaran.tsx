@@ -62,7 +62,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
               data={deriveQScoreGroup(filter, user.activeRole.role, 0)}
               color={chartColors.primary}
               domain={[3.0, 4.0]}
-              height={180}
+              height={300}
             />
           </CardContent>
         </Card>
@@ -73,7 +73,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
               data={deriveQScoreGroup(filter, user.activeRole.role, 1)}
               color={chartColors.mid}
               domain={[3.0, 4.0]}
-              height={180}
+              height={300}
             />
           </CardContent>
         </Card>
@@ -84,7 +84,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
               data={deriveQScoreGroup(filter, user.activeRole.role, 2)}
               color={chartColors.light}
               domain={[3.0, 4.0]}
-              height={180}
+              height={300}
             />
           </CardContent>
         </Card>

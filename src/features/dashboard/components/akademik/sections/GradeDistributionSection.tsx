@@ -56,7 +56,7 @@ function GradePie() {
 
 function GradeStackedBar() {
   return (
-    <ResponsiveContainer width="100%" height={260}>
+    <ResponsiveContainer width="100%" height={350}>
       <BarChart data={GRADE_DIST_SORTED} layout="vertical" margin={{ top: 0, right: 32, bottom: 0, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" horizontal={false} />
         <XAxis type="number" tick={AXIS_STYLE} tickFormatter={v => `${v}%`} />

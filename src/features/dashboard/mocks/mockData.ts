@@ -221,6 +221,21 @@ export const GRADING_COMP: GradingComp[] = [
   { faculty:'SITH',  UTS:24, UAS:28, Tugas:20, Kuis:10, Praktikum:16, Other:2  },
 ];
 
+// ─── Q8 by SKS Bucket ─────────────────────────────────────────────────────────
+
+export interface Q8BySKS {
+  sks:  string;
+  q8:   number;
+  n:    number;
+}
+
+export const Q8_BY_SKS: Q8BySKS[] = [
+  { sks: '1–2 SKS', q8: 3.65, n: 423  },
+  { sks: '3 SKS',   q8: 3.42, n: 2841 },
+  { sks: '4 SKS',   q8: 3.31, n: 1205 },
+  { sks: '5+ SKS',  q8: 3.18, n: 352  },
+];
+
 // ─── Attendance ───────────────────────────────────────────────────────────────
 
 export const LECTURER_ATTENDANCE = FACULTIES.map((f, i) => ({

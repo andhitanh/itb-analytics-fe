@@ -41,7 +41,7 @@ export function HBarChart({
   data,
   color,
   domain        = [3.0, 4.0],
-  height        = 260,
+  height        = 320,
   axisWidth     = 42,
   sortOrder     = 'desc',
   referenceLine,
