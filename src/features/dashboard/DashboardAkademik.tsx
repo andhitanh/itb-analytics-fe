@@ -8,6 +8,7 @@ import TabLuaran      from './components/akademik/TabLuaran';
 import TabPelaksanaan from './components/akademik/TabPelaksanaan';
 import TabKomentar    from './components/akademik/TabKomentar';
 import { useFilterOptions } from './hooks/useFilterOptions';
+import { useStatsOverview } from './hooks/useStatsOverview';
 import {
   type AkademikFilter,
   DEFAULT_AKADEMIK_FILTER,
@@ -83,6 +84,7 @@ function FilterSummaryPill({ filter, filterOptions }: FilterSummaryPillProps) {
 export default function DashboardAkademik() {
   const { data: filterOptions } = useFilterOptions();
   const [filter, setFilter] = useState<AkademikFilter>(DEFAULT_AKADEMIK_FILTER);
+  const { data: stats, isLoading: statsLoading } = useStatsOverview(filter);
 
   // Inisialisasi filter dari API: jalankan sekali saat filterOptions pertama kali tiba
   useEffect(() => {
@@ -100,7 +102,7 @@ export default function DashboardAkademik() {
   return (
     <div className="flex flex-col gap-4">
 
-      <AkademikStatsSection />
+      <AkademikStatsSection data={stats} isLoading={statsLoading} />
 
       <AkademikFilterBar
         filter={filter}

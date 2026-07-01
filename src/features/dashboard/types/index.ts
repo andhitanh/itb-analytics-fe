@@ -1,19 +1,18 @@
-// src/features/dashboard/types/index.ts
-export type Sentiment = 'positive' | 'neutral' | 'negative';
+// ─── Shared primitives ────────────────────────────────────────────────────────
 
-// Nilai mengikuti kd_strata DB persis: "S1" | "S2" | "S3" | "PR"
-// Label tampilan ("Profesi") ada di filterOptions.jenjang[].label dari API
-export type JenjangFilter = 'S1' | 'S2' | 'S3' | 'PR';
+export type Sentiment    = 'positive' | 'neutral' | 'negative';
+export type JenjangFilter = 'S1' | 'S2' | 'S3' | 'Profesi';
 
-// Nilai mengikuti output _SEMESTER_MAP di backend: "ganjil" bukan "gasal"
+// ─── Akademik filter ──────────────────────────────────────────────────────────
+
 export type SemesterFilter = 'semua' | 'ganjil' | 'genap' | 'pendek';
 
 export interface AkademikFilter {
   tahunAjaran:  string;
   semester:     SemesterFilter;
   jenjang:      JenjangFilter[];
-  fakultas:     string;        // kd_fak, mis. "STEI"
-  programStudi: string;        // str(no_ps), mis. "135" — atau 'semua'
+  fakultas:     string;
+  programStudi: string;
 }
 
 export const DEFAULT_AKADEMIK_FILTER: AkademikFilter = {
@@ -24,7 +23,7 @@ export const DEFAULT_AKADEMIK_FILTER: AkademikFilter = {
   programStudi: 'semua',
 };
 
-// ─── Wisudawan (tidak berubah) ─────────────────────────────────────────────
+// ─── Wisudawan filter ─────────────────────────────────────────────────────────
 
 export type PeriodeWisuda = 'semua' | 'april' | 'agustus' | 'oktober';
 
@@ -42,12 +41,19 @@ export const DEFAULT_WISUDAWAN_FILTER: WisudawanFilter = {
   fakultas: 'semua',
 };
 
+// ─── Domain types ─────────────────────────────────────────────────────────────
+
+/**
+ * Satu entri isu dari analisis teks komentar.
+ * Dipakai oleh IssueList, IssueCommentSection, TabKomentar, TabWisSuara.
+ */
 export interface Issue {
   label:     string;
   count:     number;
   sentiment: Sentiment;
 }
 
+/** Shape data yang diterima HBarChart dan dikembalikan fungsi grouping */
 export interface GroupDataItem {
   label: string;
   avg:   number;

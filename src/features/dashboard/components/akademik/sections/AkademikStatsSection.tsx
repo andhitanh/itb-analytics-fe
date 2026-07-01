@@ -1,5 +1,5 @@
 import { StatCard } from '@/components/ui/stat-card';
-import { STATS }    from '@/features/dashboard/mocks/mockData';
+import type { StatsOverviewResponse } from '@/features/dashboard/api/akademik';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -38,30 +38,44 @@ function StudentIcon() {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function AkademikStatsSection() {
+interface AkademikStatsSectionProps {
+  data:      StatsOverviewResponse | null;
+  isLoading: boolean;
+}
+
+const PLACEHOLDER = '—';
+
+export function AkademikStatsSection({ data, isLoading }: AkademikStatsSectionProps) {
+  const fmt = (n: number | undefined, opts?: Intl.NumberFormatOptions) =>
+    isLoading || n === undefined ? PLACEHOLDER : n.toLocaleString('id', opts);
+
   return (
     <div className="grid grid-cols-4 gap-3">
       <StatCard
         label="Mata Kuliah"
-        value={STATS.totalCourses.toLocaleString('id')}
+        value={fmt(data?.jumlah_matkul_aktif)}
         sub="Aktif semester ini"
         icon={<BookIcon />}
       />
       <StatCard
         label="Kelas / MK"
-        value={STATS.avgClassPerCourse.toFixed(1)}
+        value={
+          isLoading || !data || data.jumlah_matkul_aktif === 0
+            ? PLACEHOLDER
+            : (data.jumlah_kelas / data.jumlah_matkul_aktif).toFixed(1)
+        }
         sub="Rata-rata kelas per MK"
         icon={<ClassIcon />}
       />
       <StatCard
         label="Dosen Aktif"
-        value={STATS.activeLecturers.toLocaleString('id')}
+        value={fmt(data?.jumlah_dosen_aktif)}
         sub="Mengajar semester ini"
         icon={<TeacherIcon />}
       />
       <StatCard
         label="Mahasiswa"
-        value={STATS.activeStudents.toLocaleString('id')}
+        value={fmt(data?.jumlah_mahasiswa_aktif)}
         sub="Terdaftar semester ini"
         icon={<StudentIcon />}
       />
