@@ -45,13 +45,11 @@ export async function fetchAkademikFilterOptions(
 // ─── Stats overview ─────────────────────────────────────────────────────────
 
 export interface StatsOverviewResponse {
-  jumlah_kelas:                number;
-  jumlah_matkul_aktif:         number;
-  jumlah_dosen_aktif:          number;
-  jumlah_mahasiswa_aktif:      number;
-  avg_pct_kehadiran_dosen:     number | null;
-  avg_pct_kehadiran_mahasiswa: number | null;
-  avg_ip_akhir_mahasiswa:      number | null;
+  jumlah_kelas:           number;
+  jumlah_matkul_aktif:    number;
+  jumlah_dosen_aktif:     number;
+  jumlah_mahasiswa_aktif: number;
+  avg_kelas_per_matkul:   number | null;
 }
 
 /**

@@ -60,9 +60,9 @@ export function AkademikStatsSection({ data, isLoading }: AkademikStatsSectionPr
       <StatCard
         label="Kelas / MK"
         value={
-          isLoading || !data || data.jumlah_matkul_aktif === 0
+          isLoading || data?.avg_kelas_per_matkul == null
             ? PLACEHOLDER
-            : (data.jumlah_kelas / data.jumlah_matkul_aktif).toFixed(1)
+            : data.avg_kelas_per_matkul.toFixed(1)
         }
         sub="Rata-rata kelas per MK"
         icon={<ClassIcon />}
