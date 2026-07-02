@@ -1,6 +1,17 @@
-import {
-  FACULTIES, QUESTIONS_SHORT, QUESTIONS_FULL, LATEST_SCORES,
-} from '@/features/dashboard/mocks/mockData';
+import { QUESTIONS_SHORT, QUESTIONS_FULL } from '@/features/dashboard/mocks/mockData';
+import { useSkorHeatmap } from '@/features/dashboard/hooks/useSkorHeatmap';
+import type { HeatmapRow } from '@/features/dashboard/api/akademik';
+import type { AkademikFilter } from '@/features/dashboard/types';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+// Urutan field di response HARUS selaras dengan QUESTIONS_SHORT/QUESTIONS_FULL
+// (index 0 = Q1 = avg_skor_q21, dst) — lihat mapping di api_endpoint_reference.md.
+const Q_FIELDS = [
+  'avg_skor_q21', 'avg_skor_q22', 'avg_skor_q23', 'avg_skor_q24',
+  'avg_skor_q25', 'avg_skor_q26', 'avg_skor_q27', 'avg_skor_q28',
+  'avg_skor_q29', 'avg_skor_q30', 'avg_skor_q35', 'avg_skor_q37',
+] as const satisfies readonly (keyof HeatmapRow)[];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -13,6 +24,17 @@ function scoreToColor(score: number): { bg: string; text: string } {
   return { bg: '#FEE2E2', text: '#9B1C1C' };
 }
 
+const EMPTY_CELL = { bg: '#F3F4F6', text: '#9CA3AF' };
+
+/** Index Q dengan skor 3 terendah pada satu baris — null di-skip (bukan "terendah", tapi "tidak ada data"). */
+function bottom3Indices(scores: (number | null)[]): Set<number> {
+  const ranked = scores
+    .map((v, i) => ({ i, v }))
+    .filter((r): r is { i: number; v: number } => r.v !== null)
+    .sort((a, b) => a.v - b.v);
+  return new Set(ranked.slice(0, 3).map(r => r.i));
+}
+
 const LEGEND_ITEMS = [
   { bg: '#003366', text: '#FFF',    label: '≥3.70'     },
   { bg: '#1A6AB5', text: '#FFF',    label: '3.55–3.70' },
@@ -22,16 +44,37 @@ const LEGEND_ITEMS = [
   { bg: '#FEE2E2', text: '#9B1C1C', label: '<3.00'     },
 ];
 
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+interface ScoreHeatmapProps {
+  filter: AkademikFilter;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ScoreHeatmap() {
-  // Hitung bottom 3 pertanyaan per fakultas
-  const bottom3: Record<string, Set<number>> = {};
-  FACULTIES.forEach(f => {
-    const scores = LATEST_SCORES[f];
-    const ranked = scores.map((v, i) => ({ i, v })).sort((a, b) => a.v - b.v);
-    bottom3[f] = new Set(ranked.slice(0, 3).map(r => r.i));
-  });
+export function ScoreHeatmap({ filter }: ScoreHeatmapProps) {
+  const { data, isLoading } = useSkorHeatmap(filter);
+  const items = data?.items ?? [];
+  // kode hanya singkatan enak-dibaca di level fakultas; di level prodi
+  // kode = str(no_ps) (angka), jadi label (nama lengkap) yang dipakai.
+  const rowLabel = (row: HeatmapRow) =>
+    data?.granularity === 'fakultas' ? row.kode : row.label;
+
+  if (isLoading) {
+    return (
+      <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">
+        Memuat data heatmap…
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">
+        Tidak ada data untuk filter ini.
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-x-auto">
@@ -39,7 +82,7 @@ export function ScoreHeatmap() {
         <thead>
           <tr>
             <th className="w-[60px] px-2 py-1 text-left text-neutral font-semibold">
-              Fakultas
+              {data?.granularity === 'fakultas' ? 'Fakultas' : 'Prodi'}
             </th>
             {QUESTIONS_SHORT.map(q => (
               <th key={q} className="px-1 py-1 text-center text-neutral font-semibold w-[52px]">
@@ -49,37 +92,45 @@ export function ScoreHeatmap() {
           </tr>
         </thead>
         <tbody>
-          {FACULTIES.map(f => (
-            <tr key={f}>
-              <td className="py-0.5 pr-2 font-semibold text-text-dark whitespace-nowrap text-[11.5px]">
-                {f}
-              </td>
-              {LATEST_SCORES[f].map((score, qi) => {
-                const { bg, text } = scoreToColor(score);
-                const isBottom = bottom3[f].has(qi);
-                return (
-                  <td
-                    key={qi}
-                    title={`${f} — ${QUESTIONS_FULL[qi]}\nSkor: ${score.toFixed(2)}`}
-                    className="px-0.5 py-1 text-center cursor-default"
-                  >
-                    <div
-                      className="rounded px-0 py-1 text-[10.5px]"
-                      style={{
-                        backgroundColor: bg,
-                        color: text,
-                        fontWeight: isBottom ? 700 : 500,
-                        outline: isBottom ? '2px solid #E74C3C' : 'none',
-                        outlineOffset: -1,
-                      }}
+          {items.map(row => {
+            const scores = Q_FIELDS.map(field => row[field]);
+            const bottom3 = bottom3Indices(scores);
+            return (
+              <tr key={row.kode}>
+                <td className="py-0.5 pr-2 font-semibold text-text-dark whitespace-nowrap text-[11.5px]">
+                  {rowLabel(row)}
+                </td>
+                {scores.map((score, qi) => {
+                  const { bg, text } = score !== null ? scoreToColor(score) : EMPTY_CELL;
+                  const isBottom = bottom3.has(qi);
+                  return (
+                    <td
+                      key={qi}
+                      title={
+                        score !== null
+                          ? `${rowLabel(row)} — ${QUESTIONS_FULL[qi]}\nSkor: ${score.toFixed(2)}`
+                          : `${rowLabel(row)} — ${QUESTIONS_FULL[qi]}\nTidak ada data`
+                      }
+                      className="px-0.5 py-1 text-center cursor-default"
                     >
-                      {score.toFixed(2)}
-                    </div>
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+                      <div
+                        className="rounded px-0 py-1 text-[10.5px]"
+                        style={{
+                          backgroundColor: bg,
+                          color: text,
+                          fontWeight: isBottom ? 700 : 500,
+                          outline: isBottom ? '2px solid #E74C3C' : 'none',
+                          outlineOffset: -1,
+                        }}
+                      >
+                        {score !== null ? score.toFixed(2) : '—'}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
@@ -96,7 +147,7 @@ export function ScoreHeatmap() {
         ))}
         <div className="flex items-center gap-1.5">
           <div className="w-5 h-3.5 rounded-[3px] border-2 border-danger bg-[#D6EAFF]" />
-          <span className="text-[11px] text-neutral">Bottom 3 per fakultas</span>
+          <span className="text-[11px] text-neutral">Bottom 3 per baris</span>
         </div>
       </div>
     </div>

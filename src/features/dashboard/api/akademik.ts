@@ -10,10 +10,10 @@ export interface FilterOption {
 }
 
 export interface ProdiOption {
-  value:     string;
-  label:     string;
-  kd_ps:     string;
-  kd_strata: string;
+  value:     string;  // str(no_ps) — unik per baris
+  label:     string;  // mis. "Teknik Informatika (S1)"
+  kd_ps:     string;  // mis. "IF"
+  kd_strata: string;  // "S1" | "S2" | "S3" | "PR"
 }
 
 export interface FilterOptionsLocked {
@@ -192,6 +192,41 @@ export async function fetchAkademikGradeDistribution(
 ): Promise<GradeDistResponse> {
   const { data } = await api.get<GradeDistResponse>(
     '/api/dashboard/akademik/grade-distribution',
+    { params: buildAkademikParams(filter), signal },
+  );
+  return data;
+}
+
+// ─── Skor heatmap ───────────────────────────────────────────────────────────
+
+export interface HeatmapRow {
+  label:        string;
+  kode:         string;
+  avg_skor_q21: number | null;
+  avg_skor_q22: number | null;
+  avg_skor_q23: number | null;
+  avg_skor_q24: number | null;
+  avg_skor_q25: number | null;
+  avg_skor_q26: number | null;
+  avg_skor_q27: number | null;
+  avg_skor_q28: number | null;
+  avg_skor_q29: number | null;
+  avg_skor_q30: number | null;
+  avg_skor_q35: number | null;
+  avg_skor_q37: number | null;
+}
+
+export interface SkorHeatmapResponse {
+  granularity: 'fakultas' | 'prodi';
+  items:       HeatmapRow[];
+}
+
+export async function fetchAkademikSkorHeatmap(
+  filter: AkademikFilter,
+  signal?: AbortSignal,
+): Promise<SkorHeatmapResponse> {
+  const { data } = await api.get<SkorHeatmapResponse>(
+    '/api/dashboard/akademik/skor-heatmap',
     { params: buildAkademikParams(filter), signal },
   );
   return data;

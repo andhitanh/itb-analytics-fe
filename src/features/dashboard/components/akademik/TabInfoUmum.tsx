@@ -74,7 +74,10 @@ export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
   const bottomQItems = [...allQItems].sort((a, b) => a.value - b.value).slice(0, 5);
 
   // Faculty avg bar (filter-aware)
-  const overallGroupData = deriveOverallAvgGroup(filter, user.activeRole.role);
+  // Fallback 'dosen' aman — deriveOverallAvgGroup tidak memakai role sama
+  // sekali (parameter _role, prefix underscore), murni memenuhi TypeScript
+  // karena useUser() bisa mengembalikan user: null saat auth belum resolve.
+  const overallGroupData = deriveOverallAvgGroup(filter, user?.activeRole.role ?? 'dosen');
   const groupLabel       = filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas';
 
   return (
@@ -106,11 +109,17 @@ export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Heatmap Rata-Rata Skor per Fakultas × Pertanyaan</CardTitle>
-            <CardDescription>Semester 2023/24-2 · outline merah = bottom 3 per baris</CardDescription>
+            <CardTitle>
+              Heatmap Rata-Rata Skor per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} × Pertanyaan
+            </CardTitle>
+            <CardDescription>
+              {filter.tahunAjaran !== 'semua' ? filter.tahunAjaran : 'Seluruh tahun ajaran'}
+              {filter.semester !== 'semua' ? ` · ${filter.semester}` : ''}
+              {' · outline merah = bottom 3 per baris'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScoreHeatmap />
+            <ScoreHeatmap filter={filter} />
           </CardContent>
         </Card>
       </div>
