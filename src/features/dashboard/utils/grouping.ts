@@ -2,8 +2,6 @@ import {
   FACULTIES,
   FACULTY_AVG,
   FACULTY_GRADE_LATEST,
-  LECTURER_ATTENDANCE,
-  STUDENT_ATTENDANCE,
   getFacultyQScore,
 } from '@/features/dashboard/mocks/mockData';
 import {
@@ -56,21 +54,6 @@ export function deriveGradeGroup(
     ? FACULTY_GRADE_LATEST.filter(d => d.faculty === filter.fakultas)
     : FACULTY_GRADE_LATEST;
   return source.map(d => ({ label: d.faculty, avg: d.avg }));
-}
-
-/**
- * Data kehadiran per entitas — dikembalikan dengan nilai prev untuk TrendBadge.
- */
-export function deriveAttendanceFull(
-  filter: AkademikFilter,
-  _role:  UserRole,
-  type:   'lecturer' | 'student',
-): { label: string; avg: number; prev: number }[] {
-  const raw    = type === 'lecturer' ? LECTURER_ATTENDANCE : STUDENT_ATTENDANCE;
-  const source = filter.fakultas !== 'semua'
-    ? raw.filter(d => d.faculty === filter.fakultas)
-    : raw;
-  return source.map(d => ({ label: d.faculty, avg: d.value, prev: d.prev }));
 }
 
 // ─── Wisudawan ────────────────────────────────────────────────────────────────

@@ -1,11 +1,11 @@
-// src/features/dashboard/hooks/useStatsOverview.ts
-import { fetchAkademikStatsOverview } from '@/features/dashboard/api/akademik';
+// src/features/dashboard/hooks/useGradeDistribution.ts
+import { fetchAkademikGradeDistribution } from '@/features/dashboard/api/akademik';
 import { useAkademikQuery } from '@/features/dashboard/hooks/useAkademikQuery';
 import type { AkademikFilter } from '@/features/dashboard/types';
 
-export function useStatsOverview(filter: AkademikFilter) {
+export function useGradeDistribution(filter: AkademikFilter) {
   return useAkademikQuery(
-    signal => fetchAkademikStatsOverview(filter, signal),
+    signal => fetchAkademikGradeDistribution(filter, signal),
     [
       filter.tahunAjaran,
       filter.semester,
