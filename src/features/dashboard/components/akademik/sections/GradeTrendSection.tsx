@@ -17,29 +17,21 @@ import {
 } from "@/components/ui/card";
 import { RechartsTooltip } from "@/components/ui/recharts-tooltip";
 import { HBarChart } from "@/features/dashboard/components/shared-charts/HBarChart";
-import { deriveGradeGroup } from "@/features/dashboard/utils/grouping";
 import { useGradeTrend } from "@/features/dashboard/hooks/useGradeTrend";
 import { chartColors, AXIS_STYLE } from "@/styles/chart-token";
-import { useUser } from "@/context/UserContext";
-import type { AkademikFilter } from "@/features/dashboard/types";
+import type { GroupDataItem, AkademikFilter } from "@/features/dashboard/types";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface GradeTrendSectionProps {
-  filter: AkademikFilter;
+  filter:    AkademikFilter;
+  ipData:    GroupDataItem[];
+  ipLoading: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function GradeTrendSection({ filter }: GradeTrendSectionProps) {
-  const { user } = useUser();
-  // TODO(skor-pertanyaan): chart kanan butuh skor per entitas + prev value,
-  // itu bentuk response endpoint skor-pertanyaan?kode_grup=overall — bukan
-  // grade-trend (aggregate-only). Diganti saat Tahap "Skor Pertanyaan".
-  // Fallback 'dosen' aman karena deriveGradeGroup tidak memakai role sama
-  // sekali (parameter _role, prefix underscore = sengaja tidak dipakai) —
-  // ini murni untuk memenuhi TypeScript, bukan logic bisnis.
-  const gradeGroupData = deriveGradeGroup(filter, user?.activeRole.role ?? 'dosen');
+export function GradeTrendSection({ filter, ipData, ipLoading }: GradeTrendSectionProps) {
   const groupLabel = filter.fakultas !== "semua" ? "Prodi" : "Fakultas";
 
   const { data, isLoading } = useGradeTrend(filter);
@@ -137,7 +129,7 @@ export function GradeTrendSection({ filter }: GradeTrendSectionProps) {
         </CardContent>
       </Card>
 
-      {/* Faculty/prodi comparison — masih mock, menunggu endpoint skor-pertanyaan */}
+      {/* Faculty/prodi comparison — avg_ip dari endpoint grade-distribution */}
       <Card>
         <CardHeader>
           <CardTitle>Rata-Rata Nilai per {groupLabel}</CardTitle>
@@ -146,16 +138,26 @@ export function GradeTrendSection({ filter }: GradeTrendSectionProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <HBarChart
-            data={gradeGroupData}
-            color={chartColors.primary}
-            domain={[2.7, 3.6]}
-            referenceLine={{
-              value: 3.0,
-              label: "Min. 3.0",
-              color: chartColors.danger,
-            }}
-          />
+          {ipLoading ? (
+            <div className="h-[220px] flex items-center justify-center text-[12px] text-neutral">
+              Memuat data…
+            </div>
+          ) : ipData.length === 0 ? (
+            <div className="h-[220px] flex items-center justify-center text-[12px] text-neutral">
+              Tidak ada data untuk filter ini.
+            </div>
+          ) : (
+            <HBarChart
+              data={ipData}
+              color={chartColors.primary}
+              domain={[2.7, 3.6]}
+              referenceLine={{
+                value: 3.0,
+                label: "Min. 3.0",
+                color: chartColors.danger,
+              }}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

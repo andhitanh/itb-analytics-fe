@@ -1,15 +1,14 @@
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { AXIS_STYLE } from '@/styles/chart-token';
-import { useGradeDistribution } from '@/features/dashboard/hooks/useGradeDistribution';
-import type { GradeDistItem } from '@/features/dashboard/api/akademik';
+import type { GradeDistItem, GradeDistResponse } from '@/features/dashboard/api/akademik';
 import type { AkademikFilter } from '@/features/dashboard/types';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GRADE_COLORS: Record<string, string> = {
   A: '#003366', AB: '#1A6AB5', B: '#4CA3DD', BC: '#7CBCE8',
-  C: '#B3DBEF', D: '#F5C842', E: '#E74C3C',
+  C: '#B3DBEF', D: '#F5C842', E: '#E74C3C', T: '#1D1D1F'
 };
 
 const GRADE_FIELD_MAP = {
@@ -20,6 +19,7 @@ const GRADE_FIELD_MAP = {
   C:  'dist_pct_c',
   D:  'dist_pct_d',
   E:  'dist_pct_e',
+  T:  'dist_pct_t'
 } as const satisfies Record<string, keyof GradeDistItem>;
 
 type GradeKey = keyof typeof GRADE_FIELD_MAP;
@@ -110,6 +110,7 @@ function GradeStackedBar({ items, granularity }: { items: GradeDistItem[]; granu
     C:  item.dist_pct_c  ?? 0,
     D:  item.dist_pct_d  ?? 0,
     E:  item.dist_pct_e  ?? 0,
+    T:  item.dist_pct_t  ?? 0,
   }));
 
   if (chartData.length === 0) {
@@ -128,7 +129,7 @@ function GradeStackedBar({ items, granularity }: { items: GradeDistItem[]; granu
         <YAxis type="category" dataKey="faculty" tick={AXIS_STYLE} width={granularity === 'fakultas' ? 42 : 140} />
         <Tooltip formatter={(v: any) => typeof v === 'number' ? `${v}%` : v} />
         <Legend iconType="square" iconSize={9} wrapperStyle={{ fontSize: 11 }} />
-        {(['A','AB','B','BC','C','D','E'] as const).map(g => (
+        {(['A','AB','B','BC','C','D','E','T'] as const).map(g => (
           <Bar key={g} dataKey={g} name={g} stackId="a" fill={GRADE_COLORS[g]} maxBarSize={18} />
         ))}
       </BarChart>
@@ -140,12 +141,13 @@ function GradeStackedBar({ items, granularity }: { items: GradeDistItem[]; granu
 
 interface GradeDistributionSectionProps {
   filter: AkademikFilter;
+  data:      GradeDistResponse | null;
+  isLoading: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function GradeDistributionSection({ filter }: GradeDistributionSectionProps) {
-  const { data, isLoading } = useGradeDistribution(filter);
+export function GradeDistributionSection({ filter, data, isLoading }: GradeDistributionSectionProps) {
   const items = data?.items ?? [];
   const groupLabel = filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas';
 

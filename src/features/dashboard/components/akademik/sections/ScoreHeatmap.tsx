@@ -1,17 +1,6 @@
 import { QUESTIONS_SHORT, QUESTIONS_FULL } from '@/features/dashboard/mocks/mockData';
-import { useSkorHeatmap } from '@/features/dashboard/hooks/useSkorHeatmap';
-import type { HeatmapRow } from '@/features/dashboard/api/akademik';
-import type { AkademikFilter } from '@/features/dashboard/types';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-// Urutan field di response HARUS selaras dengan QUESTIONS_SHORT/QUESTIONS_FULL
-// (index 0 = Q1 = avg_skor_q21, dst) — lihat mapping di api_endpoint_reference.md.
-const Q_FIELDS = [
-  'avg_skor_q21', 'avg_skor_q22', 'avg_skor_q23', 'avg_skor_q24',
-  'avg_skor_q25', 'avg_skor_q26', 'avg_skor_q27', 'avg_skor_q28',
-  'avg_skor_q29', 'avg_skor_q30', 'avg_skor_q35', 'avg_skor_q37',
-] as const satisfies readonly (keyof HeatmapRow)[];
+import { HEATMAP_Q_FIELDS } from '@/features/dashboard/utils/skorHeatmap';
+import type { HeatmapRow, SkorHeatmapResponse } from '@/features/dashboard/api/akademik';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -47,13 +36,13 @@ const LEGEND_ITEMS = [
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface ScoreHeatmapProps {
-  filter: AkademikFilter;
+  data:      SkorHeatmapResponse | null;
+  isLoading: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ScoreHeatmap({ filter }: ScoreHeatmapProps) {
-  const { data, isLoading } = useSkorHeatmap(filter);
+export function ScoreHeatmap({ data, isLoading }: ScoreHeatmapProps) {
   const items = data?.items ?? [];
   // kode hanya singkatan enak-dibaca di level fakultas; di level prodi
   // kode = str(no_ps) (angka), jadi label (nama lengkap) yang dipakai.
@@ -93,7 +82,7 @@ export function ScoreHeatmap({ filter }: ScoreHeatmapProps) {
         </thead>
         <tbody>
           {items.map(row => {
-            const scores = Q_FIELDS.map(field => row[field]);
+            const scores = HEATMAP_Q_FIELDS.map(field => row[field]);
             const bottom3 = bottom3Indices(scores);
             return (
               <tr key={row.kode}>

@@ -9,13 +9,14 @@ import { RechartsTooltip }     from '@/components/ui/recharts-tooltip';
 import { ProgressRankList }    from '@/features/dashboard/components/shared-layouts/ProgressRankList';
 import { HBarChart }           from '@/features/dashboard/components/shared-charts/HBarChart';
 import { AttendanceSection }   from '@/features/dashboard/components/akademik/sections/AttendanceSection';
-import { deriveQScoreGroup }   from '@/features/dashboard/utils/grouping';
+import { useSkorPertanyaan }      from '@/features/dashboard/hooks/useSkorPertanyaan';
+import { useSkorPertanyaanGroup } from '@/features/dashboard/hooks/useSkorPertanyaanGroup';
+import { useGradeTrend }          from '@/features/dashboard/hooks/useGradeTrend';
+import { toHBarData, averageAcrossGroups } from '@/features/dashboard/utils/skorPertanyaan';
 import {
-  FACULTIES, LATEST_SCORES, getFacultyQScorePrev,
-  TEMPORAL_AVG, GRADING_COMP, Q8_BY_SKS,
+  GRADING_COMP, Q8_BY_SKS,
 } from '@/features/dashboard/mocks/mockData';
 import { chartColors, AXIS_STYLE } from '@/styles/chart-token';
-import { useUser }             from '@/context/UserContext';
 import type { AkademikFilter } from '@/features/dashboard/types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -24,22 +25,14 @@ interface TabPelaksanaanProps {
   filter: AkademikFilter;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Shared: empty/loading state for HBarChart cards ──────────────────────────
 
-function makeQGroupItems(
-  filter:   AkademikFilter,
-  qIndices: number[],
-) {
-  const faculties = filter.fakultas !== 'semua' ? [filter.fakultas] : FACULTIES;
-  return faculties.map(f => {
-    const curr = qIndices.reduce((s, qi) => s + LATEST_SCORES[f][qi], 0) / qIndices.length;
-    const prev = qIndices.reduce((s, qi) => s + getFacultyQScorePrev(f, qi), 0) / qIndices.length;
-    return {
-      label: f,
-      value: parseFloat(curr.toFixed(2)),
-      badge: <TrendBadge trend={parseFloat((curr - prev).toFixed(2))} />,
-    };
-  }).sort((a, b) => b.value - a.value);
+function ChartState({ label }: { label: string }) {
+  return (
+    <div className="h-[300px] flex items-center justify-center text-[12px] text-neutral">
+      {label}
+    </div>
+  );
 }
 
 // ─── Sub-tab: Rancangan Pelaksanaan ───────────────────────────────────────────
@@ -59,7 +52,14 @@ const THRESHOLD_LABEL = {
 };
 
 function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
-  const { user } = useUser();
+  const { data: q8Data, isLoading: q8Loading } = useSkorPertanyaan(filter, 'q28');
+  const q8ChartData = toHBarData(q8Data);
+
+  const { data: trendData, isLoading: trendLoading } = useGradeTrend(filter);
+  const q8TrendChartData = (trendData?.trend ?? []).map(p => ({
+    semester: p.period_label,
+    q8:       p.avg_skor_q28,
+  }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -72,32 +72,39 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
             <CardDescription>Rata-rata skor Q8 se-ITB · garis merah = threshold 3.0</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={TEMPORAL_AVG} margin={{ top: 8, right: 24, bottom: 0, left: -16 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" />
-                <XAxis dataKey="semester" tick={AXIS_STYLE} />
-                <YAxis domain={[2.8, 4.0]} tick={AXIS_STYLE} tickCount={7} />
-                <Tooltip
-                  content={<RechartsTooltip />}
-                  formatter={(v: any) => typeof v === 'number' ? `${v.toFixed(2)} / 4.00` : v}
-                />
-                <ReferenceLine
-                  y={3.0}
-                  stroke="#E24B4A"
-                  strokeDasharray="4 3"
-                  strokeWidth={1.5}
-                  label={THRESHOLD_LABEL}
-                />
-                <Line
-                  dataKey="q8"
-                  name="Q8 Beban Kerja"
-                  stroke={chartColors.warning}
-                  strokeWidth={2.5}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {trendLoading ? (
+              <ChartState label="Memuat data…" />
+            ) : q8TrendChartData.length === 0 ? (
+              <ChartState label="Tidak ada data untuk filter ini." />
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={q8TrendChartData} margin={{ top: 8, right: 24, bottom: 0, left: -16 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" />
+                  <XAxis dataKey="semester" tick={AXIS_STYLE} />
+                  <YAxis domain={[2.8, 4.0]} tick={AXIS_STYLE} tickCount={7} />
+                  <Tooltip
+                    content={<RechartsTooltip />}
+                    formatter={(v: any) => typeof v === 'number' ? `${v.toFixed(2)} / 4.00` : v}
+                  />
+                  <ReferenceLine
+                    y={3.0}
+                    stroke="#E24B4A"
+                    strokeDasharray="4 3"
+                    strokeWidth={1.5}
+                    label={THRESHOLD_LABEL}
+                  />
+                  <Line
+                    dataKey="q8"
+                    name="Q8 Beban Kerja"
+                    stroke={chartColors.warning}
+                    strokeWidth={2.5}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                    connectNulls
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -143,12 +150,18 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
             <p className="text-[12px] font-semibold text-text-dark mb-2">
               Q8 — Kesesuaian Beban Kerja dengan SKS per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}
             </p>
-            <HBarChart
-              data={deriveQScoreGroup(filter, user.activeRole.role, 7)}
-              color={chartColors.warning}
-              domain={[2.8, 4.0]}
-              height={300}
-            />
+            {q8Loading ? (
+              <ChartState label="Memuat data…" />
+            ) : q8ChartData.length === 0 ? (
+              <ChartState label="Tidak ada data untuk filter ini." />
+            ) : (
+              <HBarChart
+                data={q8ChartData}
+                color={chartColors.warning}
+                domain={[2.8, 4.0]}
+                height={300}
+              />
+            )}
           </CardContent>
         </Card>
 
@@ -200,9 +213,22 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
 
 // ─── Sub-tab: Performa Dosen ───────────────────────────────────────────────────
 
+// Q4-Q7 saja (BUKAN grup backend 'pelaksanaan' yang mencakup Q4-Q8) —
+// Q8 (beban kerja) sudah ditampilkan terpisah di SubTabRancangan, jadi
+// sengaja dikeluarkan dari ranking "Performa Dosen" supaya semantiknya
+// tidak bercampur dengan topik beban kerja.
+const DOSEN_KODE_GRUP = ['q24', 'q25', 'q26', 'q27'] as const;
+
 function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
-  const { user } = useUser();
-  const q4q7Items = makeQGroupItems(filter, [3, 4, 5, 6]);
+  const { data, isLoading } = useSkorPertanyaanGroup(filter, DOSEN_KODE_GRUP);
+  const [q4Data, q5Data, q6Data, q7Data] = data ?? [null, null, null, null];
+  const q4q7Items = averageAcrossGroups(data ?? [])
+    .sort((a, b) => b.value - a.value)
+    .map(({ label, value, delta }) => ({
+      label,
+      value,
+      badge: <TrendBadge trend={delta ?? 0} />,
+    }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -210,7 +236,7 @@ function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
         <Card>
           <CardHeader>
             <CardTitle>Rata-Rata Kehadiran Dosen per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
-            <CardDescription>Diurutkan dari tertinggi — semester 2023/24-2</CardDescription>
+            <CardDescription>Diurutkan dari tertinggi — sesuai filter aktif</CardDescription>
           </CardHeader>
           <CardContent>
             <AttendanceSection
@@ -228,7 +254,13 @@ function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
             <CardDescription>Q4: Terorganisir · Q5: Komunikasi · Q6: Peduli · Q7: Adil</CardDescription>
           </CardHeader>
           <CardContent>
-            <ProgressRankList items={q4q7Items} color={chartColors.mid} domain={[3.0, 4.0]} />
+            {isLoading ? (
+              <ChartState label="Memuat data…" />
+            ) : q4q7Items.length === 0 ? (
+              <ChartState label="Tidak ada data untuk filter ini." />
+            ) : (
+              <ProgressRankList items={q4q7Items} color={chartColors.mid} domain={[3.0, 4.0]} />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -236,21 +268,21 @@ function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q4 — Perkuliahan Terorganisir</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 3)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
+          <HBarChart data={toHBarData(q4Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q5 — Komunikasi Efektif</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 4)} color={chartColors.mid}     domain={[3.0, 4.0]} height={300} />
+          <HBarChart data={toHBarData(q5Data)} color={chartColors.mid}     domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q6 — Dosen Peduli Pencapaian</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 5)} color={chartColors.light}   domain={[3.0, 4.0]} height={300} />
+          <HBarChart data={toHBarData(q6Data)} color={chartColors.light}   domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q7 — Dosen Berlaku Adil</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 6)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
+          <HBarChart data={toHBarData(q7Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
       </div>
     </div>
@@ -259,9 +291,27 @@ function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
 
 // ─── Sub-tab: Performa Mahasiswa ──────────────────────────────────────────────
 
+// q35=Q11, q37=Q12 untuk HBarChart individual; 'perilaku_mahasiswa' adalah
+// grup backend precomputed (Q11-Q12) — dipakai langsung untuk ranking,
+// bukan dihitung ulang dari q35/q37 manual (backend lebih otoritatif).
+const MAHASISWA_KODE_GRUP = ['q35', 'q37', 'perilaku_mahasiswa'] as const;
+
 function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
-  const { user } = useUser();
-  const q11q12Items = makeQGroupItems(filter, [10, 11]);
+  const { data, isLoading } = useSkorPertanyaanGroup(filter, MAHASISWA_KODE_GRUP);
+  const [q11Data, q12Data, perilakuData] = data ?? [null, null, null];
+
+  const q11q12Items = (perilakuData?.items ?? [])
+    .filter(item => item.skor !== null)
+    .map(item => ({
+      label: perilakuData?.granularity === 'fakultas' ? item.kode : item.label,
+      value: item.skor as number,
+      badge: (
+        <TrendBadge
+          trend={item.prev_skor !== null ? parseFloat((item.skor! - item.prev_skor).toFixed(2)) : 0}
+        />
+      ),
+    }))
+    .sort((a, b) => b.value - a.value);
 
   return (
     <div className="flex flex-col gap-4">
@@ -269,7 +319,7 @@ function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
         <Card>
           <CardHeader>
             <CardTitle>Rata-Rata Kehadiran Mahasiswa per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
-            <CardDescription>Diurutkan dari tertinggi — semester 2023/24-2</CardDescription>
+            <CardDescription>Diurutkan dari tertinggi — sesuai filter aktif</CardDescription>
           </CardHeader>
           <CardContent>
             <AttendanceSection
@@ -287,7 +337,13 @@ function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
             <CardDescription>Q11: Mahasiswa berusaha sungguh-sungguh · Q12: Pengalaman positif</CardDescription>
           </CardHeader>
           <CardContent>
-            <ProgressRankList items={q11q12Items} color={chartColors.light} domain={[3.0, 4.0]} />
+            {isLoading ? (
+              <ChartState label="Memuat data…" />
+            ) : q11q12Items.length === 0 ? (
+              <ChartState label="Tidak ada data untuk filter ini." />
+            ) : (
+              <ProgressRankList items={q11q12Items} color={chartColors.light} domain={[3.0, 4.0]} />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -295,11 +351,11 @@ function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q11 — Mahasiswa Berusaha Sungguh-sungguh</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 10)} color={chartColors.mid}     domain={[3.0, 4.0]} height={300} />
+          <HBarChart data={toHBarData(q11Data)} color={chartColors.mid}     domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q12 — Pengalaman Belajar Positif</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 11)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
+          <HBarChart data={toHBarData(q12Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
       </div>
     </div>
@@ -308,9 +364,26 @@ function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
 
 // ─── Sub-tab: Sarana Prasarana ────────────────────────────────────────────────
 
+// q29=Q9, q30=Q10 untuk HBarChart individual; 'sarana_prasarana' adalah
+// grup backend precomputed (Q9-Q10), dipakai langsung untuk ranking.
+const SARANA_KODE_GRUP = ['q29', 'q30', 'sarana_prasarana'] as const;
+
 function SubTabSarana({ filter }: { filter: AkademikFilter }) {
-  const { user } = useUser();
-  const q9q10Items = makeQGroupItems(filter, [8, 9]);
+  const { data, isLoading } = useSkorPertanyaanGroup(filter, SARANA_KODE_GRUP);
+  const [q9Data, q10Data, saranaData] = data ?? [null, null, null];
+
+  const q9q10Items = (saranaData?.items ?? [])
+    .filter(item => item.skor !== null)
+    .map(item => ({
+      label: saranaData?.granularity === 'fakultas' ? item.kode : item.label,
+      value: item.skor as number,
+      badge: (
+        <TrendBadge
+          trend={item.prev_skor !== null ? parseFloat((item.skor! - item.prev_skor).toFixed(2)) : 0}
+        />
+      ),
+    }))
+    .sort((a, b) => b.value - a.value);
 
   return (
     <div className="flex flex-col gap-4">
@@ -320,18 +393,24 @@ function SubTabSarana({ filter }: { filter: AkademikFilter }) {
           <CardDescription>Q9: Sarana prasarana memadai · Q10: Fasilitas pendukung di luar kuliah</CardDescription>
         </CardHeader>
         <CardContent>
-          <ProgressRankList items={q9q10Items} color={chartColors.warning} domain={[3.0, 4.0]} />
+          {isLoading ? (
+            <ChartState label="Memuat data…" />
+          ) : q9q10Items.length === 0 ? (
+            <ChartState label="Tidak ada data untuk filter ini." />
+          ) : (
+            <ProgressRankList items={q9q10Items} color={chartColors.warning} domain={[3.0, 4.0]} />
+          )}
         </CardContent>
       </Card>
 
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q9 — Sarana Prasarana Memadai</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 8)} color={chartColors.warning} domain={[3.0, 4.0]} height={300} />
+          <HBarChart data={toHBarData(q9Data)} color={chartColors.warning} domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q10 — Fasilitas Pendukung di Luar Kuliah</p>
-          <HBarChart data={deriveQScoreGroup(filter, user.activeRole.role, 9)} color={chartColors.light}   domain={[3.0, 4.0]} height={300} />
+          <HBarChart data={toHBarData(q10Data)} color={chartColors.light}   domain={[3.0, 4.0]} height={300} />
         </CardContent></Card>
       </div>
     </div>

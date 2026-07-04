@@ -122,13 +122,16 @@ export async function fetchAkademikAttendance(
 // ─── Grade trend ────────────────────────────────────────────────────────────
 
 export interface GradeTrendPoint {
-  period_label:       string;
-  tahun_ajaran:        string;
-  semester:            number;
-  avg_skor_overall:    number | null;
-  dist_pct_a:          number | null;
-  dist_pct_lulus_a_c:  number | null;
-  total_mahasiswa:     number;
+  period_label:         string;
+  tahun_ajaran:         string;
+  semester:             number;
+  avg_skor_overall:     number | null;
+  avg_skor_capaian:     number | null;
+  avg_skor_pelaksanaan: number | null;
+  avg_skor_q28:         number | null;
+  dist_pct_a:           number | null;
+  dist_pct_lulus_a_c:   number | null;
+  total_mahasiswa:      number;
 }
 
 export interface GradeTrendResponse {
@@ -179,6 +182,7 @@ export interface GradeDistItem {
   dist_pct_lulus_a_c: number | null;
   dist_pct_lulus_a_d: number | null;
   total_mahasiswa:    number;
+  avg_ip:             number | null;
 }
 
 export interface GradeDistResponse {
@@ -228,6 +232,69 @@ export async function fetchAkademikSkorHeatmap(
   const { data } = await api.get<SkorHeatmapResponse>(
     '/api/dashboard/akademik/skor-heatmap',
     { params: buildAkademikParams(filter), signal },
+  );
+  return data;
+}
+
+// ─── Skor pertanyaan ────────────────────────────────────────────────────────
+
+export interface SkorItem {
+  label:             string;
+  kode:              string;
+  skor:              number | null;
+  prev_skor:         number | null;
+  prev_period_label: string | null;
+}
+
+export interface SkorPertanyaanResponse {
+  granularity: 'fakultas' | 'prodi';
+  kode_grup:   string;
+  items:       SkorItem[];
+}
+
+export async function fetchAkademikSkorPertanyaan(
+  filter:    AkademikFilter,
+  kodeGrup:  string,
+  signal?:   AbortSignal,
+): Promise<SkorPertanyaanResponse> {
+  const { data } = await api.get<SkorPertanyaanResponse>(
+    '/api/dashboard/akademik/skor-pertanyaan',
+    { params: buildAkademikParams(filter, { kode_grup: kodeGrup }), signal },
+  );
+  return data;
+}
+
+// ─── Course ranking ─────────────────────────────────────────────────────────
+
+export interface CourseRankingItem {
+  kode_matkul:       string;
+  nama_matkul_id:    string;
+  sks:               number;
+  kode_prodi:        string;
+  nama_prodi_id:     string;
+  kode_fakultas:     string;
+  jumlah_kelas:      number;
+  avg_skor:          number | null;
+  prev_skor:         number | null;
+  prev_period_label: string | null;
+}
+
+export interface CourseRankingResponse {
+  limit:  number;
+  top:    CourseRankingItem[];
+  bottom: CourseRankingItem[];
+}
+
+const DEFAULT_COURSE_RANKING_LIMIT = 5;
+
+export async function fetchAkademikCourseRanking(
+  filter:  AkademikFilter,
+  signal?: AbortSignal,
+  limit:   number = DEFAULT_COURSE_RANKING_LIMIT,
+): Promise<CourseRankingResponse> {
+  const { data } = await api.get<CourseRankingResponse>(
+    '/api/dashboard/akademik/course-ranking',
+    { params: buildAkademikParams(filter, { limit }), signal },
   );
   return data;
 }

@@ -7,13 +7,16 @@ import { RechartsTooltip }  from '@/components/ui/recharts-tooltip';
 import { ProgressRankList } from '@/features/dashboard/components/shared-layouts/ProgressRankList';
 import { HBarChart }        from '@/features/dashboard/components/shared-charts/HBarChart';
 import { ScoreHeatmap }     from '@/features/dashboard/components/akademik/sections/ScoreHeatmap';
-import { deriveOverallAvgGroup } from '@/features/dashboard/utils/grouping';
+import { useSkorPertanyaan } from '@/features/dashboard/hooks/useSkorPertanyaan';
+import { useGradeTrend }     from '@/features/dashboard/hooks/useGradeTrend';
+import { useSkorHeatmap }    from '@/features/dashboard/hooks/useSkorHeatmap';
+import { toHBarData } from '@/features/dashboard/utils/skorPertanyaan';
+import { computeAvgPerQuestion } from '@/features/dashboard/utils/skorHeatmap';
 import {
-  AVG_PER_QUESTION, QUESTIONS_SHORT, QUESTIONS_FULL,
-  TEMPORAL_AVG, ISSUES_MAHASISWA, ISSUES_DOSEN,
+  QUESTIONS_SHORT, QUESTIONS_FULL,
+  ISSUES_MAHASISWA, ISSUES_DOSEN,
 } from '@/features/dashboard/mocks/mockData';
 import { chartColors, AXIS_STYLE } from '@/styles/chart-token';
-import { useUser }           from '@/context/UserContext';
 import type { AkademikFilter } from '@/features/dashboard/types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -63,22 +66,38 @@ function StaticIssueList({
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
-  const { user } = useUser();
+  // Satu fetch dipakai bersama ScoreHeatmap DAN ranking Q1-Q12 di card
+  // sebelahnya (keduanya mounted bersamaan di baris 1) — hindari 2 request
+  // duplikat untuk data identik, sama seperti pola grade-distribution.
+  const { data: heatmapData, isLoading: heatmapLoading } = useSkorHeatmap(filter);
+  const avgPerQ = computeAvgPerQuestion(heatmapData);
 
-  // Q ranking items untuk ProgressRankList
-  const allQItems = AVG_PER_QUESTION.map((v, i) => ({
-    label: `${QUESTIONS_SHORT[i]}: ${QUESTIONS_FULL[i].slice(0, 58)}…`,
-    value: v,
-  }));
+  // Q ranking items untuk ProgressRankList — skip Q yang belum ada data
+  // sama sekali (avg null), bukan ditampilkan sebagai 0 (akan salah masuk
+  // "skor terendah").
+  const allQItems = avgPerQ
+    .map((v, i) => ({
+      label: `${QUESTIONS_SHORT[i]}: ${QUESTIONS_FULL[i].slice(0, 58)}…`,
+      value: v,
+    }))
+    .filter((item): item is { label: string; value: number } => item.value !== null);
   const topQItems    = [...allQItems].sort((a, b) => b.value - a.value).slice(0, 5);
   const bottomQItems = [...allQItems].sort((a, b) => a.value - b.value).slice(0, 5);
 
   // Faculty avg bar (filter-aware)
-  // Fallback 'dosen' aman — deriveOverallAvgGroup tidak memakai role sama
-  // sekali (parameter _role, prefix underscore), murni memenuhi TypeScript
-  // karena useUser() bisa mengembalikan user: null saat auth belum resolve.
-  const overallGroupData = deriveOverallAvgGroup(filter, user?.activeRole.role ?? 'dosen');
+  const { data: overallData, isLoading: overallLoading } = useSkorPertanyaan(filter, 'overall');
+  const overallGroupData = toHBarData(overallData);
   const groupLabel       = filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas';
+
+  // Temporal 3-garis (avg keseluruhan, Q1-Q3 capaian, Q4-Q7 pelaksanaan)
+  const { data: trendData, isLoading: trendLoading } = useGradeTrend(filter);
+  const trend = trendData?.trend ?? [];
+  const temporalChartData = trend.map(p => ({
+    semester: p.period_label,
+    avg:      p.avg_skor_overall,
+    q1q3:     p.avg_skor_capaian,
+    q4q7:     p.avg_skor_pelaksanaan,
+  }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -88,22 +107,34 @@ export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
         <Card>
           <CardHeader>
             <CardTitle>Peringkat Pertanyaan Kuesioner</CardTitle>
-            <CardDescription>Rata-rata skor 12 pertanyaan se-ITB — 2023/24-2</CardDescription>
+            <CardDescription>Rata-rata skor 12 pertanyaan — sesuai filter aktif</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3.5">
-            <div>
-              <p className="text-[11px] font-bold text-score-high-text uppercase tracking-wide mb-2">
-                ▲ Skor Tertinggi
-              </p>
-              <ProgressRankList items={topQItems} color={chartColors.success} domain={[2.5, 4.0]} mode="top" />
-            </div>
-            <div className="h-px bg-border" />
-            <div>
-              <p className="text-[11px] font-bold text-score-low-text uppercase tracking-wide mb-2">
-                ▼ Skor Terendah
-              </p>
-              <ProgressRankList items={bottomQItems} color={chartColors.danger} domain={[2.5, 4.0]} mode="bottom" />
-            </div>
+            {heatmapLoading ? (
+              <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">
+                Memuat data…
+              </div>
+            ) : allQItems.length === 0 ? (
+              <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">
+                Tidak ada data untuk filter ini.
+              </div>
+            ) : (
+              <>
+                <div>
+                  <p className="text-[11px] font-bold text-score-high-text uppercase tracking-wide mb-2">
+                    ▲ Skor Tertinggi
+                  </p>
+                  <ProgressRankList items={topQItems} color={chartColors.success} domain={[2.5, 4.0]} mode="top" />
+                </div>
+                <div className="h-px bg-border" />
+                <div>
+                  <p className="text-[11px] font-bold text-score-low-text uppercase tracking-wide mb-2">
+                    ▼ Skor Terendah
+                  </p>
+                  <ProgressRankList items={bottomQItems} color={chartColors.danger} domain={[2.5, 4.0]} mode="bottom" />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -119,7 +150,7 @@ export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ScoreHeatmap filter={filter} />
+            <ScoreHeatmap data={heatmapData} isLoading={heatmapLoading} />
           </CardContent>
         </Card>
       </div>
@@ -132,28 +163,48 @@ export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
             <CardDescription>Rata-rata keseluruhan 12 pertanyaan lintas semua fakultas</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={TEMPORAL_AVG} margin={{ top: 4, right: 12, bottom: 0, left: -16 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" />
-                <XAxis dataKey="semester" tick={AXIS_STYLE} />
-                <YAxis domain={[3.2, 3.9]} tick={AXIS_STYLE} tickFormatter={v => v.toFixed(1)} />
-                <Tooltip content={<RechartsTooltip />} />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                <Line dataKey="avg"  name="Rata-rata umum" stroke={chartColors.primary} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-                <Line dataKey="q1q3" name="Q1-Q3 (Luaran)" stroke={chartColors.mid}     strokeWidth={1.5} dot={false} strokeDasharray="5 3" />
-                <Line dataKey="q4q7" name="Q4-Q7 (Dosen)"  stroke={chartColors.light}   strokeWidth={1.5} dot={false} strokeDasharray="5 3" />
-              </LineChart>
-            </ResponsiveContainer>
+            {trendLoading ? (
+              <div className="h-[220px] flex items-center justify-center text-[12px] text-neutral">
+                Memuat data tren…
+              </div>
+            ) : temporalChartData.length === 0 ? (
+              <div className="h-[220px] flex items-center justify-center text-[12px] text-neutral">
+                Tidak ada data untuk filter ini.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={temporalChartData} margin={{ top: 4, right: 12, bottom: 0, left: -16 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" />
+                  <XAxis dataKey="semester" tick={AXIS_STYLE} />
+                  <YAxis domain={[3.2, 3.9]} tick={AXIS_STYLE} tickFormatter={v => v.toFixed(1)} />
+                  <Tooltip content={<RechartsTooltip />} />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+                  <Line dataKey="avg"  name="Rata-rata umum" stroke={chartColors.primary} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+                  <Line dataKey="q1q3" name="Q1-Q3 (Luaran)" stroke={chartColors.mid}     strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
+                  <Line dataKey="q4q7" name="Q4-Q7 (Dosen)"  stroke={chartColors.light}   strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Rata-Rata Skor per {groupLabel}</CardTitle>
-            <CardDescription>Diurutkan tertinggi — semester 2023/24-2</CardDescription>
+            <CardDescription>Diurutkan tertinggi — sesuai filter aktif</CardDescription>
           </CardHeader>
           <CardContent>
-            <HBarChart data={overallGroupData} color={chartColors.primary} domain={[3.0, 4.0]} />
+            {overallLoading ? (
+              <div className="h-[300px] flex items-center justify-center text-[12px] text-neutral">
+                Memuat data…
+              </div>
+            ) : overallGroupData.length === 0 ? (
+              <div className="h-[300px] flex items-center justify-center text-[12px] text-neutral">
+                Tidak ada data untuk filter ini.
+              </div>
+            ) : (
+              <HBarChart data={overallGroupData} color={chartColors.primary} domain={[3.0, 4.0]} />
+            )}
           </CardContent>
         </Card>
       </div>

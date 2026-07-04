@@ -5,51 +5,72 @@ import { HBarChart }            from '@/features/dashboard/components/shared-cha
 import { GradeDistributionSection } from '@/features/dashboard/components/akademik/sections/GradeDistributionSection';
 import { GradeTrendSection } from '@/features/dashboard/components/akademik/sections/GradeTrendSection';
 import { CourseRankingSection } from '@/features/dashboard/components/akademik/sections/CourseRankingSection';
-import { deriveQScoreGroup }    from '@/features/dashboard/utils/grouping';
-import {
-  FACULTIES, LATEST_SCORES, getFacultyQScorePrev,
-} from '@/features/dashboard/mocks/mockData';
+import { useSkorPertanyaanGroup } from '@/features/dashboard/hooks/useSkorPertanyaanGroup';
+import { useGradeDistribution }   from '@/features/dashboard/hooks/useGradeDistribution';
+import { toHBarData }        from '@/features/dashboard/utils/skorPertanyaan';
+import { toIpHBarData }      from '@/features/dashboard/utils/gradeDistribution';
 import { chartColors }          from '@/styles/chart-token';
-import { useUser }              from '@/context/UserContext';
 import type { AkademikFilter }  from '@/features/dashboard/types';
 
 interface TabLuaranProps {
   filter: AkademikFilter;
 }
 
-export default function TabLuaran({ filter }: TabLuaranProps) {
-  const { user } = useUser();
+// Urutan HARUS konsisten dengan index akses di bawah (KODE_GRUP[0] = Q1, dst).
+const KODE_GRUP = ['q21', 'q22', 'q23', 'capaian'] as const;
 
-  // Ranking fakultas untuk Q1-Q3 (Ketercapaian Luaran)
-  const qGroupItems = FACULTIES.map(f => {
-    const curr = [0,1,2].reduce((s, qi) => s + LATEST_SCORES[f][qi], 0) / 3;
-    const prev = [0,1,2].reduce((s, qi) => s + getFacultyQScorePrev(f, qi), 0) / 3;
-    return {
-      label: f,
-      value: parseFloat(curr.toFixed(2)),
-      badge: <TrendBadge trend={parseFloat((curr - prev).toFixed(2))} />,
-    };
-  }).sort((a, b) => b.value - a.value);
+export default function TabLuaran({ filter }: TabLuaranProps) {
+  const { data, isLoading } = useSkorPertanyaanGroup(filter, KODE_GRUP);
+  const [q1Data, q2Data, q3Data, capaianData] = data ?? [null, null, null, null];
+
+  // Satu fetch dipakai bersama GradeDistributionSection DAN panel kanan
+  // GradeTrendSection ("Rata-Rata Nilai per Fakultas/Prodi", field avg_ip) —
+  // keduanya mounted bersamaan di tab ini, jadi kalau masing-masing fetch
+  // sendiri itu 2 request duplikat untuk data yang identik.
+  const gradeDist = useGradeDistribution(filter);
+  const ipData = toIpHBarData(gradeDist.data);
+
+  // Ranking fakultas/prodi untuk Q1-Q3 (Ketercapaian Luaran) — pakai grup
+  // 'capaian' yang backend sudah precompute (avg Q1-Q3), bukan dihitung
+  // manual dari 3 response terpisah.
+  const qGroupItems = (capaianData?.items ?? [])
+    .filter(item => item.skor !== null)
+    .map(item => ({
+      label: capaianData?.granularity === 'fakultas' ? item.kode : item.label,
+      value: item.skor as number,
+      badge: (
+        <TrendBadge
+          trend={item.prev_skor !== null ? parseFloat((item.skor! - item.prev_skor).toFixed(2)) : 0}
+        />
+      ),
+    }))
+    .sort((a, b) => b.value - a.value);
 
   return (
     <div className="flex flex-col gap-4">
 
-      <GradeDistributionSection filter={filter} />
-      <GradeTrendSection        filter={filter} />
+      <GradeDistributionSection filter={filter} data={gradeDist.data} isLoading={gradeDist.isLoading} />
+      <GradeTrendSection        filter={filter} ipData={ipData} ipLoading={gradeDist.isLoading} />
       <CourseRankingSection     filter={filter} />
 
-      {/* Q1-Q3 Peringkat Fakultas */}
+      {/* Q1-Q3 Peringkat Fakultas/Prodi */}
       <Card>
         <CardHeader>
           <CardTitle>Peringkat {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)</CardTitle>
           <CardDescription>Q1: Informasi luaran · Q2: Perkuliahan diarahkan ke luaran · Q3: Mahasiswa mencapai luaran</CardDescription>
         </CardHeader>
         <CardContent>
-          <ProgressRankList
-            items={qGroupItems}
-            color={chartColors.mid}
-            domain={[3.0, 4.0]}
-          />
+          {isLoading ? (
+            <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Memuat data…</div>
+          ) : qGroupItems.length === 0 ? (
+            <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Tidak ada data untuk filter ini.</div>
+          ) : (
+            <ProgressRankList
+              items={qGroupItems}
+              color={chartColors.mid}
+              domain={[3.0, 4.0]}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -59,7 +80,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
           <CardContent className="pt-5">
             <p className="text-[12px] font-semibold text-text-dark mb-2">Q1 — Informasi Luaran MK</p>
             <HBarChart
-              data={deriveQScoreGroup(filter, user.activeRole.role, 0)}
+              data={toHBarData(q1Data)}
               color={chartColors.primary}
               domain={[3.0, 4.0]}
               height={300}
@@ -70,7 +91,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
           <CardContent className="pt-5">
             <p className="text-[12px] font-semibold text-text-dark mb-2">Q2 — Perkuliahan ke Luaran</p>
             <HBarChart
-              data={deriveQScoreGroup(filter, user.activeRole.role, 1)}
+              data={toHBarData(q2Data)}
               color={chartColors.mid}
               domain={[3.0, 4.0]}
               height={300}
@@ -81,7 +102,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
           <CardContent className="pt-5">
             <p className="text-[12px] font-semibold text-text-dark mb-2">Q3 — Mahasiswa Mencapai Luaran</p>
             <HBarChart
-              data={deriveQScoreGroup(filter, user.activeRole.role, 2)}
+              data={toHBarData(q3Data)}
               color={chartColors.light}
               domain={[3.0, 4.0]}
               height={300}

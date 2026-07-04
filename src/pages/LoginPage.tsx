@@ -1,8 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import logoSidebar from '@/assets/images/logo-sidebar.png';
-import chatbotImage from '@/assets/icons/chatbot-image.svg';
-import chartImage from '@/assets/icons/chart-image.svg';
 
 // ─── SSO Handler ──────────────────────────────────────────────────────────────
 // Redirect ke backend → backend build auth_uri Microsoft → redirect ke Microsoft.
