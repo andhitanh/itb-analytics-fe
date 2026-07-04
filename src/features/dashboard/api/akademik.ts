@@ -298,3 +298,111 @@ export async function fetchAkademikCourseRanking(
   );
   return data;
 }
+
+// ─── Grading comp ───────────────────────────────────────────────────────────
+
+export interface GradingCompItem {
+  label:                  string;
+  kode:                   string;
+  jumlah_kelas:           number;
+  avg_bobot_uts:          number | null;
+  avg_bobot_uas:          number | null;
+  avg_bobot_tugas:        number | null;
+  avg_bobot_kuis:         number | null;
+  avg_bobot_praktikum:    number | null;
+  avg_bobot_projek:       number | null;
+  avg_bobot_partisipatif: number | null;
+}
+
+export interface GradingCompResponse {
+  granularity: 'fakultas' | 'prodi';
+  items:       GradingCompItem[];
+}
+
+export async function fetchAkademikGradingComp(
+  filter: AkademikFilter,
+  signal?: AbortSignal,
+): Promise<GradingCompResponse> {
+  const { data } = await api.get<GradingCompResponse>(
+    '/api/dashboard/akademik/grading-comp',
+    { params: buildAkademikParams(filter), signal },
+  );
+  return data;
+}
+
+// ─── Skor by SKS ────────────────────────────────────────────────────────────
+
+export interface SkorBySksBucket {
+  sks_label:    string;
+  jumlah_kelas: number;
+  avg_skor_q8:  number | null;
+}
+
+export interface SkorBySksResponse {
+  // Tidak ada granularity — selalu 3 bucket tetap terlepas dari role,
+  // grain-nya berdasarkan SKS bukan entitas organisasi.
+  items: SkorBySksBucket[];
+}
+
+export async function fetchAkademikSkorBySks(
+  filter: AkademikFilter,
+  signal?: AbortSignal,
+): Promise<SkorBySksResponse> {
+  const { data } = await api.get<SkorBySksResponse>(
+    '/api/dashboard/akademik/skor-by-sks',
+    { params: buildAkademikParams(filter), signal },
+  );
+  return data;
+}
+
+// ─── Komentar mentah ────────────────────────────────────────────────────────
+
+export type KomentarSumber = 'mahasiswa' | 'dosen' | 'itb';
+
+export interface KomentarItem {
+  kelas_id:       number;
+  kode_matkul:    string;
+  nama_matkul_id: string;
+  kode_prodi:     string;
+  nama_prodi_id:  string;
+  kode_fakultas:  string;
+  tahun_ajaran:   string;
+  semester:       number;
+  teks:           string;
+}
+
+export interface KomentarPagination {
+  page:        number;
+  page_size:   number;
+  total_items: number;
+  total_pages: number;
+}
+
+export interface KomentarResponse {
+  sumber:     KomentarSumber;
+  pagination: KomentarPagination;
+  items:      KomentarItem[];
+}
+
+const DEFAULT_KOMENTAR_PAGE_SIZE = 10;
+
+/**
+ * Belum ada fitur filter-by-isu (menunggu endpoint /isu-dominan terpisah
+ * dari tim RAG) — endpoint ini murni daftar komentar mentah + pagination.
+ */
+export async function fetchAkademikKomentarMentah(
+  filter:    AkademikFilter,
+  sumber:    KomentarSumber,
+  page:      number,
+  signal?:   AbortSignal,
+  pageSize:  number = DEFAULT_KOMENTAR_PAGE_SIZE,
+): Promise<KomentarResponse> {
+  const { data } = await api.get<KomentarResponse>(
+    '/api/dashboard/akademik/komentar-mentah',
+    {
+      params: buildAkademikParams(filter, { sumber, page, page_size: pageSize }),
+      signal,
+    },
+  );
+  return data;
+}

@@ -12,10 +12,9 @@ import { AttendanceSection }   from '@/features/dashboard/components/akademik/se
 import { useSkorPertanyaan }      from '@/features/dashboard/hooks/useSkorPertanyaan';
 import { useSkorPertanyaanGroup } from '@/features/dashboard/hooks/useSkorPertanyaanGroup';
 import { useGradeTrend }          from '@/features/dashboard/hooks/useGradeTrend';
+import { useGradingComp }         from '@/features/dashboard/hooks/useGradingComp';
+import { useSkorBySks }           from '@/features/dashboard/hooks/useSkorBySks';
 import { toHBarData, averageAcrossGroups } from '@/features/dashboard/utils/skorPertanyaan';
-import {
-  GRADING_COMP, Q8_BY_SKS,
-} from '@/features/dashboard/mocks/mockData';
 import { chartColors, AXIS_STYLE } from '@/styles/chart-token';
 import type { AkademikFilter } from '@/features/dashboard/types';
 
@@ -37,7 +36,8 @@ function ChartState({ label }: { label: string }) {
 
 // ─── Sub-tab: Rancangan Pelaksanaan ───────────────────────────────────────────
 
-const Q8_BAR_COLOR = (q8: number) => {
+const Q8_BAR_COLOR = (q8: number | null) => {
+  if (q8 === null) return '#D1D9E0';
   if (q8 >= 3.5) return '#1D9E75';
   if (q8 >= 3.3) return '#185FA5';
   if (q8 >= 3.0) return '#EF9F27';
@@ -51,6 +51,17 @@ const THRESHOLD_LABEL = {
   fill: '#E24B4A',
 };
 
+// 7 bucket eksplisit sesuai backend (bukan 6 + "Other" seperti mock lama).
+const GRADING_BUCKETS = [
+  { key: 'UTS',          field: 'avg_bobot_uts',          color: chartColors.primary },
+  { key: 'UAS',          field: 'avg_bobot_uas',          color: chartColors.mid     },
+  { key: 'Tugas',        field: 'avg_bobot_tugas',        color: chartColors.light   },
+  { key: 'Kuis',         field: 'avg_bobot_kuis',         color: chartColors.pale    },
+  { key: 'Praktikum',    field: 'avg_bobot_praktikum',    color: chartColors.warning },
+  { key: 'Projek',       field: 'avg_bobot_projek',       color: chartColors.success },
+  { key: 'Partisipatif', field: 'avg_bobot_partisipatif', color: chartColors.purple  },
+] as const;
+
 function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
   const { data: q8Data, isLoading: q8Loading } = useSkorPertanyaan(filter, 'q28');
   const q8ChartData = toHBarData(q8Data);
@@ -60,6 +71,25 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
     semester: p.period_label,
     q8:       p.avg_skor_q28,
   }));
+
+  const { data: gradingCompData, isLoading: gradingCompLoading } = useGradingComp(filter);
+  const useKodeGrading = gradingCompData?.granularity === 'fakultas';
+  // null berarti komponen TIDAK dipakai entitas itu — pakai undefined
+  // (bukan 0) supaya Recharts tidak render segmen 0% dan tooltip tidak
+  // menampilkan baris untuk komponen yang memang tidak dipakai.
+  const gradingCompChartData = (gradingCompData?.items ?? []).map(item => ({
+    faculty: useKodeGrading ? item.kode : item.label,
+    UTS:          item.avg_bobot_uts          ?? undefined,
+    UAS:          item.avg_bobot_uas          ?? undefined,
+    Tugas:        item.avg_bobot_tugas        ?? undefined,
+    Kuis:         item.avg_bobot_kuis         ?? undefined,
+    Praktikum:    item.avg_bobot_praktikum    ?? undefined,
+    Projek:       item.avg_bobot_projek       ?? undefined,
+    Partisipatif: item.avg_bobot_partisipatif ?? undefined,
+  }));
+
+  const { data: skorBySksData, isLoading: skorBySksLoading } = useSkorBySks(filter);
+  const skorBySksChartData = skorBySksData?.items ?? [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -111,33 +141,32 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
         {/* Komposisi komponen penilaian per fakultas */}
         <Card>
           <CardHeader>
-            <CardTitle>Komposisi Komponen Penilaian per Fakultas</CardTitle>
-            <CardDescription>Rata-rata persentase bobot per jenis komponen</CardDescription>
+            <CardTitle>Komposisi Komponen Penilaian per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
+            <CardDescription>Rata-rata persentase bobot per jenis komponen — sesuai filter aktif</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart
-                data={GRADING_COMP}
-                layout="vertical"
-                margin={{ top: 0, right: 12, bottom: 0, left: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" horizontal={false} />
-                <XAxis type="number" tick={AXIS_STYLE} tickFormatter={v => `${v}%`} />
-                <YAxis type="category" dataKey="faculty" tick={AXIS_STYLE} width={42} />
-                <Tooltip formatter={(v: any) => typeof v === 'number' ? `${v}%` : v} />
-                <Legend iconType="square" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                {([
-                  { key: 'UTS',       color: chartColors.primary },
-                  { key: 'UAS',       color: chartColors.mid     },
-                  { key: 'Tugas',     color: chartColors.light   },
-                  { key: 'Kuis',      color: chartColors.pale    },
-                  { key: 'Praktikum', color: chartColors.warning },
-                  { key: 'Other',     color: '#D1D9E0'           },
-                ] as const).map(({ key, color }) => (
-                  <Bar key={key} dataKey={key} name={key} stackId="a" fill={color} maxBarSize={16} />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
+            {gradingCompLoading ? (
+              <ChartState label="Memuat data…" />
+            ) : gradingCompChartData.length === 0 ? (
+              <ChartState label="Tidak ada data untuk filter ini." />
+            ) : (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart
+                  data={gradingCompChartData}
+                  layout="vertical"
+                  margin={{ top: 0, right: 12, bottom: 0, left: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" horizontal={false} />
+                  <XAxis type="number" tick={AXIS_STYLE} tickFormatter={v => `${v}%`} />
+                  <YAxis type="category" dataKey="faculty" tick={AXIS_STYLE} width={useKodeGrading ? 42 : 140} />
+                  <Tooltip formatter={(v: any) => typeof v === 'number' ? `${v}%` : v} />
+                  <Legend iconType="square" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+                  {GRADING_BUCKETS.map(({ key, color }) => (
+                    <Bar key={key} dataKey={key} name={key} stackId="a" fill={color} maxBarSize={16} />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -174,36 +203,41 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart
-                data={Q8_BY_SKS}
-                margin={{ top: 8, right: 24, bottom: 0, left: -16 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" vertical={false} />
-                <XAxis dataKey="sks" tick={AXIS_STYLE} />
-                <YAxis domain={[2.8, 4.0]} tick={AXIS_STYLE} tickCount={7} />
-                <Tooltip
-                  formatter={(v: any) => typeof v === 'number' ? `${v.toFixed(2)} / 4.00` : v}
-                  labelFormatter={(label) => {
-                    const key = String(label);
-                    const item = Q8_BY_SKS.find(d => d.sks === key);
-                    return `${key} · ${item?.n?.toLocaleString() ?? ''} kelas`;
-                  }}
-                />
-                <ReferenceLine
-                  y={3.0}
-                  stroke="#E24B4A"
-                  strokeDasharray="4 3"
-                  strokeWidth={1.5}
-                  label={THRESHOLD_LABEL}
-                />
-                <Bar dataKey="q8" name="Q8" maxBarSize={64} radius={[4, 4, 0, 0]}>
-                  {Q8_BY_SKS.map(d => (
-                    <Cell key={d.sks} fill={Q8_BAR_COLOR(d.q8)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            {skorBySksLoading ? (
+              <ChartState label="Memuat data…" />
+            ) : skorBySksChartData.length === 0 ? (
+              <ChartState label="Tidak ada data untuk filter ini." />
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart
+                  data={skorBySksChartData}
+                  margin={{ top: 8, right: 24, bottom: 0, left: -16 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" vertical={false} />
+                  <XAxis dataKey="sks_label" tick={AXIS_STYLE} />
+                  <YAxis domain={[2.8, 4.0]} tick={AXIS_STYLE} tickCount={7} />
+                  <Tooltip
+                    formatter={(v: any) => typeof v === 'number' ? `${v.toFixed(2)} / 4.00` : 'Tidak ada data'}
+                    labelFormatter={(label) => {
+                      const item = skorBySksChartData.find(d => d.sks_label === label);
+                      return `${label} · ${item?.jumlah_kelas?.toLocaleString('id') ?? ''} kelas`;
+                    }}
+                  />
+                  <ReferenceLine
+                    y={3.0}
+                    stroke="#E24B4A"
+                    strokeDasharray="4 3"
+                    strokeWidth={1.5}
+                    label={THRESHOLD_LABEL}
+                  />
+                  <Bar dataKey="avg_skor_q8" name="Q8" maxBarSize={64} radius={[4, 4, 0, 0]}>
+                    {skorBySksChartData.map(d => (
+                      <Cell key={d.sks_label} fill={Q8_BAR_COLOR(d.avg_skor_q8)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
