@@ -8,6 +8,7 @@ import { AXIS_STYLE } from '@/styles/chart-token';
 
 export interface HBarChartDataItem {
   label: string;
+  kode:  string;
   avg:   number;
 }
 
@@ -51,9 +52,12 @@ export function HBarChart({
     sortOrder === 'desc' ? b.avg - a.avg : a.avg - b.avg,
   );
 
+  const chartKey = `${sorted.length}-${sorted[0]?.label ?? 'empty'}`;
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart
+        key={chartKey}
         data={sorted}
         layout="vertical"
         margin={{ top: 0, right: 44, bottom: 0, left: 0 }}
@@ -68,13 +72,27 @@ export function HBarChart({
         />
         <YAxis
           type="category"
-          dataKey="label"
+          dataKey="kode"
           tick={AXIS_STYLE}
-          width={axisWidth}
+          width={axisWidth ?? 56}
+          interval={0}
         />
 
-        <Tooltip formatter={(v: any) => typeof v === 'number' ? labelFormatter(v) : String(v ?? '')} />
-
+        <Tooltip
+          content={({ active, payload }) => {
+            if (!active || !payload?.length) return null;
+            const item = payload[0].payload as HBarChartDataItem;
+            return (
+              <div className="rounded-md border bg-white px-2.5 py-1.5 shadow-sm text-[11.5px]">
+                <p className="font-semibold text-neutral-800">{item.label}</p>
+                <p className="text-neutral-500">
+                  {labelFormatter(item.avg)}
+                </p>
+              </div>
+            );
+          }}
+        />
+        
         {referenceLine && (
           <ReferenceLine
             x={referenceLine.value}
@@ -96,6 +114,7 @@ export function HBarChart({
           fill={color}
           radius={[0, 4, 4, 0]}
           maxBarSize={18}
+          isAnimationActive={false}
           label={{
             position:  'right',
             formatter: (v: unknown) =>

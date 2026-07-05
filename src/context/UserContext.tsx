@@ -25,7 +25,7 @@ import {
   type ReactNode,
 } from 'react';
 import axios from 'axios';
-import { fetchMe, postLogout } from '@/api/auth';
+import { fetchMe, postLogout, patchActiveRole } from '@/api/auth';
 import { type UserInfo, type RoleEntry } from '@/types/user';
 
 // ─── Context Type ─────────────────────────────────────────────────────────────
@@ -74,18 +74,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('auth:unauthorized', onUnauthorized);
   }, []);
 
-  // ── Role switcher (local only) ─────────────────────────────────────────────
-  // Backend PATCH /api/auth/role masih dikomentari.
-  // Saat backend enable endpoint tersebut, tambahkan API call di sini.
-  const setActiveRole = useCallback((userRoleId: number) => {
-    setUser(prev => {
-      if (!prev) return prev;
-      const entry = prev.availableRoles.find(
-        (r: RoleEntry) => r.userRoleId === userRoleId,
-      );
-      return entry ? { ...prev, activeRole: entry } : prev;
-    });
-  }, []);
+   // ── Role switcher ────────────────────────────────────────────────────────
+ // Panggil backend dulu (source of truth ada di session Redis), baru update
+// state lokal dari RESPONS backend — bukan dari input userRoleId mentah,
+ // supaya kalau backend menolak (403, role tidak valid), UI tidak ikut
+ // berubah secara keliru.
+ const setActiveRole = useCallback(async (userRoleId: number) => {
+   const result = await patchActiveRole(userRoleId); // { active_role, available_roles }
+   setUser(prev => {
+     if (!prev) return prev;
+     const entry = prev.availableRoles.find(
+       (r: RoleEntry) => r.userRoleId === result.active_role.user_role_id,
+     );
+     return entry ? { ...prev, activeRole: entry } : prev;
+   });
+ }, []);
 
   // ── Logout ─────────────────────────────────────────────────────────────────
   const logout = useCallback(async () => {

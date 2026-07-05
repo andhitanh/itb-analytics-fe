@@ -13,10 +13,9 @@ import type { GroupDataItem } from '@/features/dashboard/types';
  */
 export function toHBarData(response: SkorPertanyaanResponse | null): GroupDataItem[] {
   if (!response) return [];
-  const useKode = response.granularity === 'fakultas';
   return response.items
     .filter((item): item is SkorItem & { skor: number } => item.skor !== null)
-    .map(item => ({ label: useKode ? item.kode : item.label, avg: item.skor }));
+    .map(item => ({ label: item.label, kode: item.kode, avg: item.skor }));
 }
 
 /**
@@ -33,19 +32,19 @@ export function toHBarData(response: SkorPertanyaanResponse | null): GroupDataIt
  */
 export function averageAcrossGroups(
   responses: (SkorPertanyaanResponse | null)[],
-): { label: string; value: number; delta: number | null }[] {
+): { label: string; kode: string; value: number; delta: number | null }[] {
   const valid = responses.filter((r): r is SkorPertanyaanResponse => r !== null);
   if (valid.length === 0) return [];
 
-  const useKode = valid[0].granularity === 'fakultas';
-  const byEntity = new Map<string, { label: string; skors: number[]; deltas: number[] }>();
+  const byEntity = new Map<string, { label: string; kode: string; skors: number[]; deltas: number[] }>();
 
   for (const response of valid) {
     for (const item of response.items) {
       if (item.skor === null) continue;
       const key = item.kode;
       const entry = byEntity.get(key) ?? {
-        label: useKode ? item.kode : item.label,
+        label: item.label,
+        kode:  item.kode,
         skors: [],
         deltas: [],
       };
@@ -57,8 +56,9 @@ export function averageAcrossGroups(
     }
   }
 
-  return Array.from(byEntity.values()).map(({ label, skors, deltas }) => ({
+  return Array.from(byEntity.values()).map(({ label, kode, skors, deltas }) => ({
     label,
+    kode,
     value: parseFloat((skors.reduce((s, v) => s + v, 0) / skors.length).toFixed(2)),
     delta: deltas.length > 0
       ? parseFloat((deltas.reduce((s, v) => s + v, 0) / deltas.length).toFixed(2))

@@ -44,10 +44,7 @@ interface ScoreHeatmapProps {
 
 export function ScoreHeatmap({ data, isLoading }: ScoreHeatmapProps) {
   const items = data?.items ?? [];
-  // kode hanya singkatan enak-dibaca di level fakultas; di level prodi
-  // kode = str(no_ps) (angka), jadi label (nama lengkap) yang dipakai.
-  const rowLabel = (row: HeatmapRow) =>
-    data?.granularity === 'fakultas' ? row.kode : row.label;
+  const rowLabel = (row: HeatmapRow) => row.kode;
 
   if (isLoading) {
     return (

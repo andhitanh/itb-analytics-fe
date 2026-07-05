@@ -56,5 +56,6 @@ export interface Issue {
 /** Shape data yang diterima HBarChart dan dikembalikan fungsi grouping */
 export interface GroupDataItem {
   label: string;
+  kode:  string;
   avg:   number;
 }

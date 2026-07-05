@@ -11,8 +11,7 @@ import type { GroupDataItem } from '@/features/dashboard/types';
  */
 export function toIpHBarData(response: GradeDistResponse | null): GroupDataItem[] {
   if (!response) return [];
-  const useKode = response.granularity === 'fakultas';
   return response.items
     .filter((item): item is GradeDistItem & { avg_ip: number } => item.avg_ip !== null)
-    .map(item => ({ label: useKode ? item.kode : item.label, avg: item.avg_ip }));
+    .map(item => ({ label: item.label, kode: item.kode, avg: item.avg_ip }));
 }

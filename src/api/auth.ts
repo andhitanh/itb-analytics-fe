@@ -76,3 +76,8 @@ export async function fetchMe(): Promise<UserInfo> {
 export async function postLogout(): Promise<void> {
   await api.post('/api/auth/logout');
 }
+
+export async function patchActiveRole(userRoleId: number) {
+  const { data } = await api.patch('/api/auth/role', { user_role_id: userRoleId });
+  return data;
+}

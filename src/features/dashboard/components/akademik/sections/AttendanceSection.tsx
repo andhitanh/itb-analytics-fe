@@ -36,7 +36,7 @@ export function AttendanceSection({
 
   const chartData = items
     .filter(item => pickCurr(item, type) !== null)
-    .map(item => ({ label: item.label, avg: pickCurr(item, type) as number }));
+    .map(item => ({ label: item.label, kode: item.kode, avg: pickCurr(item, type) as number }));
 
   const avgCurr = average(items.map(item => pickCurr(item, type)));
   const avgPrev = average(items.map(item => pickPrev(item, type)));

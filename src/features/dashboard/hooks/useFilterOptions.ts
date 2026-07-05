@@ -1,5 +1,6 @@
 // src/features/dashboard/hooks/useFilterOptions.ts
 import { useState, useEffect } from 'react';
+import { useUser } from '@/context/UserContext';
 import {
   fetchAkademikFilterOptions,
   type AkademikFilterOptionsResponse,
@@ -15,9 +16,12 @@ export function useFilterOptions(): UseFilterOptionsResult {
   const [data,      setData]      = useState<AkademikFilterOptionsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error,     setError]     = useState<string | null>(null);
+  const { user } = useUser();
+  const activeRoleId = user?.activeRole?.userRoleId ?? null;
 
   useEffect(() => {
     const controller = new AbortController();
+    setIsLoading(true);
 
     fetchAkademikFilterOptions(controller.signal)
       .then(setData)
@@ -31,7 +35,7 @@ export function useFilterOptions(): UseFilterOptionsResult {
       });
 
     return () => controller.abort();
-  }, []); // hanya fetch sekali saat mount — filter options stabil per session
+  }, [activeRoleId]); // hanya fetch sekali saat mount — filter options stabil per session
 
   return { data, isLoading, error };
 }
