@@ -3,6 +3,8 @@ import { ChartState } from './ChartState';
 import { TrendBadge } from '@/components/ui/domain-badges';
 import { CourseRankingSection } from '@/features/dashboard/components/akademik/sections/CourseRankingSection';
 import type { GroupDataItem, AkademikFilter } from '@/features/dashboard/types';
+import { ChartInsightButton } from '@/features/dashboard/components/shared-charts/ChartInsightButton';
+import { buildEntityComparisonChartContext } from '@/features/dashboard/components/shared-charts/entityComparisonChartContext';
 
 interface EntityAwareChartProps {
   items:                    GroupDataItem[];
@@ -90,16 +92,30 @@ export function EntityAwareChart({
 
   const data: HBarChartDataItem[] = items;
   return (
-    <HBarChart
-      data={data}
-      color={color}
-      domain={domain}
-      height={height}
-      labelFormatter={labelFormatter}
-      sortOrder={sortOrder}
-      referenceLine={referenceLine}
-      onBarClick={onDrill}
-    />
+    <div>
+      {filter && courseRankingMetric && (
+        <div className="flex justify-end mb-1.5">
+          <ChartInsightButton
+            chartContext={buildEntityComparisonChartContext(
+              courseRankingMetric,
+              courseRankingTitle ?? 'Perbandingan Antar Entitas',
+              items,
+              filter,
+            )}
+          />
+        </div>
+      )}
+      <HBarChart
+        data={data}
+        color={color}
+        domain={domain}
+        height={height}
+        labelFormatter={labelFormatter}
+        sortOrder={sortOrder}
+        referenceLine={referenceLine}
+        onBarClick={onDrill}
+      />
+    </div>
   );
 }
 

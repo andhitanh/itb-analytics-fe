@@ -2,24 +2,7 @@
 import type { CourseRankingItem } from '@/features/dashboard/api/akademik';
 import type { AkademikFilter } from '@/features/dashboard/types';
 import type { ChartContext } from '@/features/chatbot/types';
-
-// Cermin tabel "Field skor per metric" di 03-entity-comparison-and-ranking-chart.md §2.1.
-// q4_q7 sengaja tidak dipetakan ke 1 field tunggal -- ditangani terpisah di
-// buildCourseRankingChartContext karena strukturnya beda (rata_rata_dari_kolom + nilai).
-const METRIC_FIELD: Record<string, string> = {
-  overall: 'avg_skor_overall',
-  capaian: 'avg_skor_capaian',
-  q21: 'skor_q21', q22: 'skor_q22', q23: 'skor_q23',
-  q24: 'skor_q24', q25: 'skor_q25', q26: 'skor_q26', q27: 'skor_q27',
-  q28: 'skor_q28',
-  sarana_prasarana: 'avg_skor_sarana_prasarana',
-  q29: 'skor_q29', q30: 'skor_q30',
-  perilaku_mahasiswa: 'avg_skor_perilaku_mahasiswa',
-  q35: 'skor_q35', q37: 'skor_q37',
-  avg_ip: 'avg_ip_akhir_mahasiswa',
-};
-
-const Q4_Q7_KOLOM = ['skor_q24', 'skor_q25', 'skor_q26', 'skor_q27'];
+import { METRIC_FIELD, Q4_Q7_KOLOM, Q4_Q7_QUESTION_REFERENCE, questionReferenceFor } from '@/features/dashboard/components/shared-charts/metricFieldMap';
 
 function toSeriesRow(item: CourseRankingItem, posisi: 'top' | 'bottom', metric: string) {
   const base = {
@@ -80,5 +63,6 @@ export function buildCourseRankingChartContext(
       'Bandingkan mata kuliah top dan bottom untuk metrik ini.',
       'Prioritaskan mata kuliah bottom dengan jumlah_mahasiswa besar karena dampaknya lebih luas.',
     ],
+    question_reference: metric === 'q4_q7' ? Q4_Q7_QUESTION_REFERENCE : questionReferenceFor(metric),
   };
 }
