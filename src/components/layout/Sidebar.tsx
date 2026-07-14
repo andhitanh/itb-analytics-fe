@@ -37,6 +37,7 @@ const USER_MENU = [
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user } = useUser();
+  if (!user) return null;
   const menu = user.activeRole.role === 'admin' ? ADMIN_MENU : USER_MENU;
 
   return (
