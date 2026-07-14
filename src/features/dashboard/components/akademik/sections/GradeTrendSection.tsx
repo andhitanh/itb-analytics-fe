@@ -20,6 +20,8 @@ import { EntityAwareChart } from "@/features/dashboard/components/shared-charts/
 import { useGradeTrend } from "@/features/dashboard/hooks/useGradeTrend";
 import { chartColors, AXIS_STYLE } from "@/styles/chart-token";
 import type { GroupDataItem, AkademikFilter } from "@/features/dashboard/types";
+import { ChartInsightButton } from "@/features/dashboard/components/shared-charts/ChartInsightButton";
+import { buildGradeTrendChartContext } from "@/features/dashboard/components/shared-charts/gradeTrendChartContext";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -55,10 +57,17 @@ export function GradeTrendSection({ filter, ipData, ipLoading, onDrill }: GradeT
       {/* Temporal trend — tidak terpengaruh grouping */}
       <Card>
         <CardHeader>
-          <CardTitle>Tren Rata-Rata Nilai Mahasiswa</CardTitle>
-          <CardDescription>
-            Perkembangan skor dari semester ke semester
-          </CardDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <CardTitle>Tren Rata-Rata Nilai Mahasiswa</CardTitle>
+              <CardDescription>
+                Perkembangan skor dari semester ke semester
+              </CardDescription>
+            </div>
+            {!isLoading && chartData.length > 0 && (
+              <ChartInsightButton chartContext={buildGradeTrendChartContext(filter, data)} />
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-baseline gap-2.5 mb-1">

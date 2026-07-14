@@ -21,6 +21,9 @@ import { toHBarData, averageAcrossGroups } from '@/features/dashboard/utils/skor
 import { chartColors, AXIS_STYLE } from '@/styles/chart-token';
 import { METRIC_Q8 } from '@/features/dashboard/constants/courseRankingMetrics';
 import type { AkademikFilter } from '@/features/dashboard/types';
+import { ChartInsightButton } from '@/features/dashboard/components/shared-charts/ChartInsightButton';
+import { buildGradingCompChartContext } from '@/features/dashboard/components/shared-charts/gradingCompChartContext';
+import { buildSkorBySksChartContext } from '@/features/dashboard/components/shared-charts/skorBySksChartContext';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -111,8 +114,21 @@ function SubTabRancangan({ filter, onDrill }: { filter: AkademikFilter; onDrill:
         {/* Komposisi komponen penilaian per fakultas */}
         <Card>
           <CardHeader>
-            <CardTitle>Komposisi Komponen Penilaian per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
-            <CardDescription>Rata-rata persentase bobot per jenis komponen — sesuai filter aktif</CardDescription>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle>Komposisi Komponen Penilaian per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
+                <CardDescription>Rata-rata persentase bobot per jenis komponen — sesuai filter aktif</CardDescription>
+              </div>
+              {!gradingCompLoading && (gradingCompData?.items.length ?? 0) > 0 && (
+                <ChartInsightButton
+                  chartContext={buildGradingCompChartContext(
+                    filter,
+                    gradingCompData?.items ?? [],
+                    gradingCompData?.granularity ?? 'fakultas',
+                  )}
+                />
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <GradingCompChart items={gradingCompData?.items ?? []} isLoading={gradingCompLoading} />
@@ -150,10 +166,17 @@ function SubTabRancangan({ filter, onDrill }: { filter: AkademikFilter; onDrill:
         {/* Q8 × SKS bucket */}
         <Card>
           <CardHeader>
-            <CardTitle>Q8 per Kelompok SKS</CardTitle>
-            <CardDescription>
-              Rata-rata skor Q8 berdasarkan besar SKS mata kuliah · semakin besar SKS, beban cenderung makin tidak proporsional
-            </CardDescription>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle>Q8 per Kelompok SKS</CardTitle>
+                <CardDescription>
+                  Rata-rata skor Q8 berdasarkan besar SKS mata kuliah · semakin besar SKS, beban cenderung makin tidak proporsional
+                </CardDescription>
+              </div>
+              {!skorBySksLoading && skorBySksChartData.length > 0 && (
+                <ChartInsightButton chartContext={buildSkorBySksChartContext(filter, skorBySksChartData)} />
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {skorBySksLoading ? (

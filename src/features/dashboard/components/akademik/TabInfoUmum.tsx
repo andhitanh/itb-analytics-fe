@@ -19,6 +19,8 @@ import {
 import { METRIC_OVERALL } from '@/features/dashboard/constants/courseRankingMetrics';
 import { chartColors, AXIS_STYLE } from '@/styles/chart-token';
 import type { AkademikFilter } from '@/features/dashboard/types';
+import { ChartInsightButton } from '@/features/dashboard/components/shared-charts/ChartInsightButton';
+import { buildScoreHeatmapChartContext } from '@/features/dashboard/components/shared-charts/scoreHeatmapChartContext';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -143,14 +145,21 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              Heatmap Rata-Rata Skor per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} × Pertanyaan
-            </CardTitle>
-            <CardDescription>
-              {filter.tahunAjaran !== 'semua' ? filter.tahunAjaran : 'Seluruh tahun ajaran'}
-              {filter.semester !== 'semua' ? ` · ${filter.semester}` : ''}
-              {' · outline merah = bottom 3 per baris'}
-            </CardDescription>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle>
+                  Heatmap Rata-Rata Skor per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} × Pertanyaan
+                </CardTitle>
+                <CardDescription>
+                  {filter.tahunAjaran !== 'semua' ? filter.tahunAjaran : 'Seluruh tahun ajaran'}
+                  {filter.semester !== 'semua' ? ` · ${filter.semester}` : ''}
+                  {' · outline merah = bottom 3 per baris'}
+                </CardDescription>
+              </div>
+              {!heatmapLoading && (heatmapData?.items.length ?? 0) > 0 && (
+                <ChartInsightButton chartContext={buildScoreHeatmapChartContext(filter, heatmapData)} />
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <ScoreHeatmap data={heatmapData} isLoading={heatmapLoading} />
@@ -182,8 +191,8 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
                 <Tooltip content={<RechartsTooltip />} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                 <Line dataKey="avg"  name="Rata-rata umum" stroke={chartColors.primary} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-                {/* <Line dataKey="q1q3" name="Q1-Q3 (Luaran)" stroke={chartColors.mid}     strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
-                <Line dataKey="q4q7" name="Q4-Q7 (Dosen)"  stroke={chartColors.light}   strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls /> */}
+                <Line dataKey="q1q3" name="Q1-Q3 (Luaran)" stroke={chartColors.mid}     strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
+                <Line dataKey="q4q7" name="Q4-Q7 (Dosen)"  stroke={chartColors.light}   strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
               </LineChart>
             </ResponsiveContainer>
           )}
