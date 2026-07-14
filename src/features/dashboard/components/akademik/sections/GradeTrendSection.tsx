@@ -16,7 +16,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { RechartsTooltip } from "@/components/ui/recharts-tooltip";
-import { HBarChart } from "@/features/dashboard/components/shared-charts/HBarChart";
+import { EntityAwareChart } from "@/features/dashboard/components/shared-charts/EntityAwareChart";
 import { useGradeTrend } from "@/features/dashboard/hooks/useGradeTrend";
 import { chartColors, AXIS_STYLE } from "@/styles/chart-token";
 import type { GroupDataItem, AkademikFilter } from "@/features/dashboard/types";
@@ -27,11 +27,12 @@ interface GradeTrendSectionProps {
   filter:    AkademikFilter;
   ipData:    GroupDataItem[];
   ipLoading: boolean;
+  onDrill:   (kode: string) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function GradeTrendSection({ filter, ipData, ipLoading }: GradeTrendSectionProps) {
+export function GradeTrendSection({ filter, ipData, ipLoading, onDrill }: GradeTrendSectionProps) {
   const groupLabel = filter.fakultas !== "semua" ? "Prodi" : "Fakultas";
 
   const { data, isLoading } = useGradeTrend(filter);
@@ -132,9 +133,11 @@ export function GradeTrendSection({ filter, ipData, ipLoading }: GradeTrendSecti
       {/* Faculty/prodi comparison — avg_ip dari endpoint grade-distribution */}
       <Card>
         <CardHeader>
-          <CardTitle>Rata-Rata Nilai per {groupLabel}</CardTitle>
+          <CardTitle>{ipData.length === 1 ? 'Rata-Rata IP' : `Rata-Rata Nilai per ${groupLabel}`}</CardTitle>
           <CardDescription>
-            Diurutkan tertinggi · merah = di bawah 3.0
+              {ipData.length === 1
+              ? 'Top/bottom mata kuliah berdasarkan rata-rata IP'
+              : 'Diurutkan tertinggi · merah = di bawah 3.0'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -147,15 +150,15 @@ export function GradeTrendSection({ filter, ipData, ipLoading }: GradeTrendSecti
               Tidak ada data untuk filter ini.
             </div>
           ) : (
-            <HBarChart
-              data={ipData}
+            <EntityAwareChart
+              items={ipData}
               color={chartColors.primary}
               domain={[2.7, 3.6]}
-              referenceLine={{
-                value: 3.0,
-                label: "Min. 3.0",
-                color: chartColors.danger,
-              }}
+              referenceLine={{ value: 3.0, label: "Min. 3.0", color: chartColors.danger }}
+              filter={filter}
+              courseRankingMetric="avg_ip"
+              courseRankingTitle="Rata-Rata IP"
+              onDrill={onDrill}
             />
           )}
         </CardContent>

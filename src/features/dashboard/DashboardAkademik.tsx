@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AkademikFilterBar }    from './components/akademik/AkademikFilterBar';
 import { AkademikStatsSection } from './components/akademik/sections/AkademikStatsSection';
+import { Breadcrumb }           from './components/shared-layouts/Breadcrumb';
 import TabInfoUmum    from './components/akademik/TabInfoUmum';
 import TabLuaran      from './components/akademik/TabLuaran';
 import TabPelaksanaan from './components/akademik/TabPelaksanaan';
@@ -41,7 +42,6 @@ interface FilterSummaryPillProps {
 }
 
 function FilterSummaryPill({ filter, filterOptions }: FilterSummaryPillProps) {
-  // Buat lookup label dari options — stabil selama filterOptions tidak berubah
   const semesterLabel = useMemo(() => {
     if (!filterOptions) return {};
     return Object.fromEntries(filterOptions.semester.map(s => [s.value, s.label]));
@@ -99,6 +99,23 @@ export default function DashboardAkademik() {
     });
   }, [filterOptions]);
 
+  // Drill-down murni reuse state filter yang sudah ada — bukan state baru.
+  // Cuma relevan untuk Direktorat (locked.fakultas null); untuk Dekan/Kaprodi
+  // filter.fakultas/programStudi sudah dikunci RLS, breadcrumb tidak muncul
+  // karena locked.fakultas pasti terisi (bukan null) untuk mereka.
+  const isDrilledManually = filterOptions?.locked.fakultas === null && filter.fakultas !== 'semua';
+  const drilledLabel = isDrilledManually
+    ? filterOptions?.fakultas.find(f => f.value === filter.fakultas)?.label ?? filter.fakultas
+    : null;
+
+  const handleDrill = (kode: string) => {
+    setFilter({ ...filter, fakultas: kode, programStudi: 'semua' });
+  };
+
+  const handleDrillUp = () => {
+    setFilter({ ...filter, fakultas: 'semua', programStudi: 'semua' });
+  };
+
   return (
     <div className="flex flex-col gap-4">
 
@@ -109,6 +126,14 @@ export default function DashboardAkademik() {
         onChange={setFilter}
         filterOptions={filterOptions}
       />
+
+      {isDrilledManually && (
+        <Breadcrumb
+          root="Semua fakultas"
+          current={drilledLabel!}
+          onBack={handleDrillUp}
+        />
+      )}
 
       <Tabs defaultValue="info-umum" className="gap-0">
 
@@ -126,10 +151,18 @@ export default function DashboardAkademik() {
         </div>
 
         <div className="bg-surface rounded-b-[14px] border border-border border-t-0 p-6">
-          <TabsContent value="info-umum"   className="mt-0"><TabInfoUmum    filter={filter} /></TabsContent>
-          <TabsContent value="luaran"      className="mt-0"><TabLuaran      filter={filter} /></TabsContent>
-          <TabsContent value="pelaksanaan" className="mt-0"><TabPelaksanaan filter={filter} /></TabsContent>
-          <TabsContent value="komentar"    className="mt-0"><TabKomentar    filter={filter} /></TabsContent>
+          <TabsContent value="info-umum"   className="mt-0">
+            <TabInfoUmum    filter={filter} onDrill={handleDrill} />
+          </TabsContent>
+          <TabsContent value="luaran"      className="mt-0">
+            <TabLuaran      filter={filter} onDrill={handleDrill} />
+          </TabsContent>
+          <TabsContent value="pelaksanaan" className="mt-0">
+            <TabPelaksanaan filter={filter} onDrill={handleDrill} />
+          </TabsContent>
+          <TabsContent value="komentar"    className="mt-0">
+            <TabKomentar    filter={filter} />
+          </TabsContent>
         </div>
 
       </Tabs>

@@ -1,10 +1,10 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { TrendBadge }           from '@/components/ui/domain-badges';
 import { ProgressRankList }     from '@/features/dashboard/components/shared-layouts/ProgressRankList';
-import { HBarChart }            from '@/features/dashboard/components/shared-charts/HBarChart';
+import { EntityAwareChart }     from '@/features/dashboard/components/shared-charts/EntityAwareChart';
+import { CourseRankingSection } from '@/features/dashboard/components/akademik/sections/CourseRankingSection';
 import { GradeDistributionSection } from '@/features/dashboard/components/akademik/sections/GradeDistributionSection';
 import { GradeTrendSection } from '@/features/dashboard/components/akademik/sections/GradeTrendSection';
-import { CourseRankingSection } from '@/features/dashboard/components/akademik/sections/CourseRankingSection';
 import { useSkorPertanyaanGroup } from '@/features/dashboard/hooks/useSkorPertanyaanGroup';
 import { useGradeDistribution }   from '@/features/dashboard/hooks/useGradeDistribution';
 import { toHBarData }        from '@/features/dashboard/utils/skorPertanyaan';
@@ -13,13 +13,14 @@ import { chartColors }          from '@/styles/chart-token';
 import type { AkademikFilter }  from '@/features/dashboard/types';
 
 interface TabLuaranProps {
-  filter: AkademikFilter;
+  filter:  AkademikFilter;
+  onDrill: (kode: string) => void;
 }
 
 // Urutan HARUS konsisten dengan index akses di bawah (KODE_GRUP[0] = Q1, dst).
 const KODE_GRUP = ['q21', 'q22', 'q23', 'capaian'] as const;
 
-export default function TabLuaran({ filter }: TabLuaranProps) {
+export default function TabLuaran({ filter, onDrill }: TabLuaranProps) {
   const { data, isLoading } = useSkorPertanyaanGroup(filter, KODE_GRUP);
   const [q1Data, q2Data, q3Data, capaianData] = data ?? [null, null, null, null];
 
@@ -50,17 +51,26 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
     <div className="flex flex-col gap-4">
 
       <GradeDistributionSection filter={filter} data={gradeDist.data} isLoading={gradeDist.isLoading} />
-      <GradeTrendSection        filter={filter} ipData={ipData} ipLoading={gradeDist.isLoading} />
-      <CourseRankingSection     filter={filter} />
+      <GradeTrendSection        filter={filter} ipData={ipData} ipLoading={gradeDist.isLoading} onDrill={onDrill} />
 
-      {/* Q1-Q3 Peringkat Fakultas/Prodi */}
+      {/* Q1-Q3 Peringkat Fakultas/Prodi — collapse otomatis ke course-ranking */}
       <Card>
         <CardHeader>
-          <CardTitle>Peringkat {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)</CardTitle>
-          <CardDescription>Q1: Informasi luaran · Q2: Perkuliahan diarahkan ke luaran · Q3: Mahasiswa mencapai luaran</CardDescription>
+          <CardTitle>
+            {qGroupItems.length === 1
+              ? 'Rata-Rata Q1-Q3 — Ketercapaian Luaran MK'
+              : `Peringkat ${filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)`}
+          </CardTitle>
+          <CardDescription>
+            {qGroupItems.length === 1
+              ? 'Top/bottom mata kuliah berdasarkan skor ini'
+              : 'Q1: Informasi luaran · Q2: Perkuliahan diarahkan ke luaran · Q3: Mahasiswa mencapai luaran'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {qGroupItems.length === 1 ? (
+            <CourseRankingSection filter={filter} metric="capaian" title="Rata-Rata Q1-Q3 — Ketercapaian Luaran MK" />
+          ) : isLoading ? (
             <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Memuat data…</div>
           ) : qGroupItems.length === 0 ? (
             <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Tidak ada data untuk filter ini.</div>
@@ -69,6 +79,7 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
               items={qGroupItems}
               color={chartColors.mid}
               domain={[3.0, 4.0]}
+              showRank={qGroupItems.length > 1}
             />
           )}
         </CardContent>
@@ -79,33 +90,45 @@ export default function TabLuaran({ filter }: TabLuaranProps) {
         <Card>
           <CardContent className="pt-5">
             <p className="text-[12px] font-semibold text-text-dark mb-2">Q1 — Informasi Luaran MK</p>
-            <HBarChart
-              data={toHBarData(q1Data)}
+            <EntityAwareChart
+              items={toHBarData(q1Data)}
               color={chartColors.primary}
               domain={[3.0, 4.0]}
               height={300}
+              filter={filter}
+              courseRankingMetric="q21"
+              courseRankingTitle="Q1 — Informasi Luaran MK"
+              onDrill={onDrill}
             />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-5">
             <p className="text-[12px] font-semibold text-text-dark mb-2">Q2 — Perkuliahan ke Luaran</p>
-            <HBarChart
-              data={toHBarData(q2Data)}
+            <EntityAwareChart
+              items={toHBarData(q2Data)}
               color={chartColors.mid}
               domain={[3.0, 4.0]}
               height={300}
+              filter={filter}
+              courseRankingMetric="q22"
+              courseRankingTitle="Q2 — Perkuliahan ke Luaran"
+              onDrill={onDrill}
             />
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-5">
             <p className="text-[12px] font-semibold text-text-dark mb-2">Q3 — Mahasiswa Mencapai Luaran</p>
-            <HBarChart
-              data={toHBarData(q3Data)}
+            <EntityAwareChart
+              items={toHBarData(q3Data)}
               color={chartColors.light}
               domain={[3.0, 4.0]}
               height={300}
+              filter={filter}
+              courseRankingMetric="q23"
+              courseRankingTitle="Q3 — Mahasiswa Mencapai Luaran"
+              onDrill={onDrill}
             />
           </CardContent>
         </Card>

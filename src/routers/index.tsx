@@ -5,6 +5,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 import MainLayout    from '@/layouts/MainLayout';
 import DashboardPage from '@/pages/DashboardPage';
+import ChatbotPage   from '@/pages/ChatbotPage';
 import LoginPage     from '@/pages/LoginPage';
 
 // Blokir akses ke halaman protected jika belum login.
@@ -46,6 +47,7 @@ export function AppRouter() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="chatbot" element={<ChatbotPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

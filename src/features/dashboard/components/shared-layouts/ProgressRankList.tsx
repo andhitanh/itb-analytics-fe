@@ -29,6 +29,7 @@ interface ProgressRankListProps {
    * top = hijau (default) | bottom = merah
    */
   mode?:  'top' | 'bottom';
+  showRank?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -38,6 +39,7 @@ export function ProgressRankList({
   color,
   domain,
   mode = 'top',
+  showRank = true,
 }: ProgressRankListProps) {
   const [domainMin, domainMax] = domain;
 
@@ -58,15 +60,17 @@ export function ProgressRankList({
         return (
           <div key={i} className="flex items-center gap-2.5">
 
-            {/* Nomor urut */}
-            <div className={cn(
-              'w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0',
-              circleClass,
-            )}>
-              <span className={cn('text-[11px] font-bold', rankClass)}>
-                {i + 1}
-              </span>
-            </div>
+            {/* Nomor urut — disembunyikan kalau cuma 1 entitas (tidak ada yang diperingkat) */}
+            {showRank && (
+              <div className={cn(
+                'w-[22px] h-[22px] rounded-full flex items-center justify-center shrink-0',
+                circleClass,
+              )}>
+                <span className={cn('text-[11px] font-bold', rankClass)}>
+                  {i + 1}
+                </span>
+              </div>
+            )}
 
             {/* Label + progress bar */}
             <div className="flex-1 min-w-0">

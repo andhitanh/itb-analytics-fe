@@ -56,42 +56,50 @@ export async function streamChat(
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
 
-  while (true) {
-    let readResult: ReadableStreamReadResult<Uint8Array>;
-    try {
-      readResult = await reader.read();
-    } catch {
-      if (signal?.aborted) return;
-      callbacks.onError('Koneksi terputus saat menerima jawaban.');
-      return;
-    }
-
-    const { done, value } = readResult;
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-
-    // 1 event SSE dipisah "\n\n" -- lihat yield f"data: ...\n\n" di backend
-    const parts = buffer.split('\n\n');
-    buffer = parts.pop() ?? ''; // sisa yang belum lengkap, simpan untuk chunk berikutnya
-
-    for (const part of parts) {
-      if (!part.startsWith('data: ')) continue;
-
-      let parsed: ChatStreamEvent;
+  try {
+    while (true) {
+      let readResult: ReadableStreamReadResult<Uint8Array>;
       try {
-        parsed = JSON.parse(part.slice(6));
+        readResult = await reader.read();
       } catch {
-        continue; // event tidak valid, skip -- jangan jatuhkan seluruh stream
+        if (signal?.aborted) return;
+        callbacks.onError('Koneksi terputus saat menerima jawaban.');
+        return;
       }
 
-      if (parsed.event === 'node_update') {
-        callbacks.onNodeUpdate?.(parsed);
-      } else if (parsed.event === 'final_response') {
-        callbacks.onFinalResponse(parsed);
-      } else if (parsed.event === 'error') {
-        callbacks.onError(parsed.message);
+      const { done, value } = readResult;
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // 1 event SSE dipisah "\n\n" -- lihat yield f"data: ...\n\n" di backend
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop() ?? ''; // sisa yang belum lengkap, simpan untuk chunk berikutnya
+
+      for (const part of parts) {
+        if (!part.startsWith('data: ')) continue;
+
+        let parsed: ChatStreamEvent;
+        try {
+          parsed = JSON.parse(part.slice(6));
+        } catch {
+          continue; // event tidak valid, skip -- jangan jatuhkan seluruh stream
+        }
+
+        if (parsed.event === 'node_update') {
+          callbacks.onNodeUpdate?.(parsed);
+        } else if (parsed.event === 'final_response') {
+          callbacks.onFinalResponse(parsed);
+        } else if (parsed.event === 'error') {
+          callbacks.onError(parsed.message);
+        }
       }
     }
+  } finally {
+    // Wajib dilepas eksplisit: kalau reader ditinggal locked (misal karena
+    // salah satu `return` di atas, atau AbortController membatalkan fetch di
+    // tengah baca), stream di baliknya tidak akan pernah ditutup dengan
+    // bersih -- ini yang mencegah memory leak saat koneksi dibatalkan.
+    reader.releaseLock();
   }
 }

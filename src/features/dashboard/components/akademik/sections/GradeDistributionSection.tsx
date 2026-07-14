@@ -3,6 +3,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { AXIS_STYLE } from '@/styles/chart-token';
 import type { GradeDistItem, GradeDistResponse } from '@/features/dashboard/api/akademik';
 import type { AkademikFilter } from '@/features/dashboard/types';
+import { explodeGradeToProfile } from '@/features/dashboard/utils/gradeDistribution';
+import { HBarChart } from '@/features/dashboard/components/shared-charts/HBarChart';
+import { ChartState } from '@/features/dashboard/components/shared-charts/ChartState';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -101,6 +104,23 @@ function GradeStackedBar({ items, granularity }: { items: GradeDistItem[]; granu
   // kode hanya berupa singkatan yang enak dibaca di level fakultas (mis. "STEI").
   // Di level prodi, kode = str(no_ps) — ID numerik, bukan singkatan — jadi
   // label (nama lengkap prodi) yang dipakai supaya tidak menampilkan angka mentah.
+  if (items.length === 0) {
+    return <ChartState label="Tidak ada data untuk filter ini." height={350} />;
+  }
+
+  if (items.length === 1) {
+    return (
+      <HBarChart
+        data={explodeGradeToProfile(items[0])}
+        color={GRADE_COLORS.A}
+        domain={[0, 100]}
+        height={350}
+        labelFormatter={v => `${v}%`}
+      />
+    );
+  }
+
+  
   const chartData = items.map(item => ({
     faculty: granularity === 'fakultas' ? item.kode : item.label,
     A:  item.dist_pct_a  ?? 0,

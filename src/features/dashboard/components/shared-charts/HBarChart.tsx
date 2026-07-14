@@ -10,30 +10,28 @@ export interface HBarChartDataItem {
   label: string;
   kode:  string;
   avg:   number;
+  delta?: number | null;
 }
 
 interface HBarChartProps {
-  /** Data entity-agnostic: bisa fakultas, prodi, mata kuliah, dll */
   data:           HBarChartDataItem[];
-  /** Warna bar — ambil dari chartColors */
   color:          string;
-  /** Domain axis X, default [3.0, 4.0] */
   domain?:        [number, number];
-  /** Tinggi chart dalam px, default 260 */
   height?:        number;
-  /** Urutan: desc = tertinggi di atas (default), asc = terendah di atas */
-
-  axisWidth?: number; // default 42, item charts butuh lebih lebar
-
+  axisWidth?:     number;
   sortOrder?:     'asc' | 'desc';
-  /** Garis referensi vertikal opsional, misal batas nilai minimum */
   referenceLine?: {
     value:  number;
     label:  string;
     color?: string;
   };
-  /** Format label nilai di kanan bar, default toFixed(2) */
   labelFormatter?: (value: number) => string;
+  /**
+   * Kalau diisi, tiap bar bisa diklik untuk drill-down (mis. fakultas →
+   * prodi). Menerima `kode` bar yang diklik. Opsional — chart tanpa prop
+   * ini tetap berfungsi normal, tidak clickable.
+   */
+  onBarClick?: (kode: string) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -41,12 +39,13 @@ interface HBarChartProps {
 export function HBarChart({
   data,
   color,
-  domain        = [3.0, 4.0],
-  height        = 320,
-  axisWidth     = 42,
-  sortOrder     = 'desc',
+  domain         = [3.0, 4.0],
+  height         = 320,
+  axisWidth      = 42,
+  sortOrder      = 'desc',
   referenceLine,
   labelFormatter = v => v.toFixed(2),
+  onBarClick,
 }: HBarChartProps) {
   const sorted = [...data].sort((a, b) =>
     sortOrder === 'desc' ? b.avg - a.avg : a.avg - b.avg,
@@ -74,7 +73,7 @@ export function HBarChart({
           type="category"
           dataKey="kode"
           tick={AXIS_STYLE}
-          width={axisWidth ?? 56}
+          width={axisWidth}
           interval={0}
         />
 
@@ -92,7 +91,7 @@ export function HBarChart({
             );
           }}
         />
-        
+
         {referenceLine && (
           <ReferenceLine
             x={referenceLine.value}
@@ -115,6 +114,8 @@ export function HBarChart({
           radius={[0, 4, 4, 0]}
           maxBarSize={18}
           isAnimationActive={false}
+          onClick={onBarClick ? (d: any) => onBarClick((d.payload as HBarChartDataItem).kode) : undefined}
+          style={onBarClick ? { cursor: 'pointer' } : undefined}
           label={{
             position:  'right',
             formatter: (v: unknown) =>

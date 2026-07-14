@@ -14,6 +14,9 @@ import {
   type JenjangFilter,
   DEFAULT_AKADEMIK_FILTER,
 } from '@/features/dashboard/types';
+import {
+  Tooltip, TooltipContent, TooltipTrigger, TooltipProvider
+} from '@/components/ui/tooltip';
 import type { AkademikFilterOptionsResponse } from '@/features/dashboard/api/akademik';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -26,12 +29,21 @@ function FilterLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LockedLabel({ label }: { label: string }) {
+function LockedLabel({ label, reason }: { label: string; reason: string }) {
   return (
-    <div className="flex items-center gap-1 h-7 px-2.5 text-[12px] rounded-md border border-border-mid bg-active text-primary font-semibold">
-      <Lock className="h-3 w-3 shrink-0" />
-      {label}
-    </div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-1 h-7 px-2.5 text-[12px] rounded-md border border-border-mid bg-active text-primary font-semibold cursor-help">
+            <Lock className="h-3 w-3 shrink-0" />
+            {label}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="text-[11.5px] max-w-[220px]">
+          {reason}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -180,7 +192,10 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
       <div className="flex items-center gap-1.5">
         <FilterLabel>Fakultas</FilterLabel>
         {locked.fakultas ? (
-          <LockedLabel label={lockedFakLabel ?? locked.fakultas} />
+          <LockedLabel
+            label={lockedFakLabel ?? locked.fakultas}
+            reason="Tampilan Anda dikunci ke fakultas ini sesuai wewenang akun Anda."
+          />
         ) : (
           <Select
             value={filter.fakultas}
@@ -208,7 +223,10 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
           <div className="flex items-center gap-1.5">
             <FilterLabel>Prodi</FilterLabel>
             {locked.prodi ? (
-              <LockedLabel label={lockedProdiLabel ?? locked.prodi} />
+              <LockedLabel
+                label={lockedProdiLabel ?? locked.prodi}
+                reason="Tampilan Anda dikunci ke program studi ini sesuai wewenang akun Anda."
+              />
             ) : (
               <Select
                 value={filter.programStudi}

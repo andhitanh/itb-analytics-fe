@@ -1,14 +1,17 @@
 import {
   LineChart, Line, BarChart, Bar, Cell, ReferenceLine,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TrendBadge }          from '@/components/ui/domain-badges';
 import { RechartsTooltip }     from '@/components/ui/recharts-tooltip';
 import { ProgressRankList }    from '@/features/dashboard/components/shared-layouts/ProgressRankList';
-import { HBarChart }           from '@/features/dashboard/components/shared-charts/HBarChart';
+import { EntityAwareChart }    from '@/features/dashboard/components/shared-charts/EntityAwareChart';
+import { ChartState }          from '@/features/dashboard/components/shared-charts/ChartState';
+import { GradingCompChart }    from '@/features/dashboard/components/akademik/sections/GradingCompChart';
 import { AttendanceSection }   from '@/features/dashboard/components/akademik/sections/AttendanceSection';
+import { CourseRankingSection } from '@/features/dashboard/components/akademik/sections/CourseRankingSection';
 import { useSkorPertanyaan }      from '@/features/dashboard/hooks/useSkorPertanyaan';
 import { useSkorPertanyaanGroup } from '@/features/dashboard/hooks/useSkorPertanyaanGroup';
 import { useGradeTrend }          from '@/features/dashboard/hooks/useGradeTrend';
@@ -16,22 +19,14 @@ import { useGradingComp }         from '@/features/dashboard/hooks/useGradingCom
 import { useSkorBySks }           from '@/features/dashboard/hooks/useSkorBySks';
 import { toHBarData, averageAcrossGroups } from '@/features/dashboard/utils/skorPertanyaan';
 import { chartColors, AXIS_STYLE } from '@/styles/chart-token';
+import { METRIC_Q8 } from '@/features/dashboard/constants/courseRankingMetrics';
 import type { AkademikFilter } from '@/features/dashboard/types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface TabPelaksanaanProps {
-  filter: AkademikFilter;
-}
-
-// ─── Shared: empty/loading state for HBarChart cards ──────────────────────────
-
-function ChartState({ label }: { label: string }) {
-  return (
-    <div className="h-[300px] flex items-center justify-center text-[12px] text-neutral">
-      {label}
-    </div>
-  );
+  filter:  AkademikFilter;
+  onDrill: (kode: string) => void;
 }
 
 // ─── Sub-tab: Rancangan Pelaksanaan ───────────────────────────────────────────
@@ -51,18 +46,7 @@ const THRESHOLD_LABEL = {
   fill: '#E24B4A',
 };
 
-// 7 bucket eksplisit sesuai backend (bukan 6 + "Other" seperti mock lama).
-const GRADING_BUCKETS = [
-  { key: 'UTS',          field: 'avg_bobot_uts',          color: chartColors.primary },
-  { key: 'UAS',          field: 'avg_bobot_uas',          color: chartColors.mid     },
-  { key: 'Tugas',        field: 'avg_bobot_tugas',        color: chartColors.light   },
-  { key: 'Kuis',         field: 'avg_bobot_kuis',         color: chartColors.pale    },
-  { key: 'Praktikum',    field: 'avg_bobot_praktikum',    color: chartColors.warning },
-  { key: 'Projek',       field: 'avg_bobot_projek',       color: chartColors.success },
-  { key: 'Partisipatif', field: 'avg_bobot_partisipatif', color: chartColors.purple  },
-] as const;
-
-function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
+function SubTabRancangan({ filter, onDrill }: { filter: AkademikFilter; onDrill: (kode: string) => void }) {
   const { data: q8Data, isLoading: q8Loading } = useSkorPertanyaan(filter, 'q28');
   const q8ChartData = toHBarData(q8Data);
 
@@ -73,20 +57,6 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
   }));
 
   const { data: gradingCompData, isLoading: gradingCompLoading } = useGradingComp(filter);
-  const useKodeGrading = gradingCompData?.granularity === 'fakultas';
-  // null berarti komponen TIDAK dipakai entitas itu — pakai undefined
-  // (bukan 0) supaya Recharts tidak render segmen 0% dan tooltip tidak
-  // menampilkan baris untuk komponen yang memang tidak dipakai.
-  const gradingCompChartData = (gradingCompData?.items ?? []).map(item => ({
-    faculty: useKodeGrading ? item.kode : item.label,
-    UTS:          item.avg_bobot_uts          ?? undefined,
-    UAS:          item.avg_bobot_uas          ?? undefined,
-    Tugas:        item.avg_bobot_tugas        ?? undefined,
-    Kuis:         item.avg_bobot_kuis         ?? undefined,
-    Praktikum:    item.avg_bobot_praktikum    ?? undefined,
-    Projek:       item.avg_bobot_projek       ?? undefined,
-    Partisipatif: item.avg_bobot_partisipatif ?? undefined,
-  }));
 
   const { data: skorBySksData, isLoading: skorBySksLoading } = useSkorBySks(filter);
   const skorBySksChartData = skorBySksData?.items ?? [];
@@ -145,50 +115,33 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
             <CardDescription>Rata-rata persentase bobot per jenis komponen — sesuai filter aktif</CardDescription>
           </CardHeader>
           <CardContent>
-            {gradingCompLoading ? (
-              <ChartState label="Memuat data…" />
-            ) : gradingCompChartData.length === 0 ? (
-              <ChartState label="Tidak ada data untuk filter ini." />
-            ) : (
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart
-                  data={gradingCompChartData}
-                  layout="vertical"
-                  margin={{ top: 0, right: 12, bottom: 0, left: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" horizontal={false} />
-                  <XAxis type="number" tick={AXIS_STYLE} tickFormatter={v => `${v}%`} />
-                  <YAxis type="category" dataKey="faculty" tick={AXIS_STYLE} width={useKodeGrading ? 42 : 140} />
-                  <Tooltip formatter={(v: any) => typeof v === 'number' ? `${v}%` : v} />
-                  <Legend iconType="square" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                  {GRADING_BUCKETS.map(({ key, color }) => (
-                    <Bar key={key} dataKey={key} name={key} stackId="a" fill={color} maxBarSize={16} />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            <GradingCompChart items={gradingCompData?.items ?? []} isLoading={gradingCompLoading} />
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
 
-        {/* Q8 per fakultas — HBarChart */}
+        {/* Q8 per fakultas/prodi — collapse otomatis ke course-ranking */}
         <Card>
           <CardContent className="pt-5">
-            <p className="text-[12px] font-semibold text-text-dark mb-2">
-              Q8 — Kesesuaian Beban Kerja dengan SKS per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}
-            </p>
+            {q8ChartData.length !== 1 && (
+              <p className="text-[12px] font-semibold text-text-dark mb-2">
+                Q8 — Kesesuaian Beban Kerja dengan SKS per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}
+              </p>
+            )}
             {q8Loading ? (
               <ChartState label="Memuat data…" />
-            ) : q8ChartData.length === 0 ? (
-              <ChartState label="Tidak ada data untuk filter ini." />
             ) : (
-              <HBarChart
-                data={q8ChartData}
+              <EntityAwareChart
+                items={q8ChartData}
                 color={chartColors.warning}
                 domain={[2.8, 4.0]}
                 height={300}
+                filter={filter}
+                courseRankingMetric={METRIC_Q8.metric}
+                courseRankingTitle={METRIC_Q8.title}
+                onDrill={onDrill}
               />
             )}
           </CardContent>
@@ -253,7 +206,7 @@ function SubTabRancangan({ filter }: { filter: AkademikFilter }) {
 // tidak bercampur dengan topik beban kerja.
 const DOSEN_KODE_GRUP = ['q24', 'q25', 'q26', 'q27'] as const;
 
-function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
+function SubTabPerformaDosen({ filter, onDrill }: { filter: AkademikFilter; onDrill: (kode: string) => void }) {
   const { data, isLoading } = useSkorPertanyaanGroup(filter, DOSEN_KODE_GRUP);
   const [q4Data, q5Data, q6Data, q7Data] = data ?? [null, null, null, null];
   const q4q7Items = averageAcrossGroups(data ?? [])
@@ -284,16 +237,22 @@ function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Peringkat — Rata-Rata Q4–Q7 (Performa Dosen)</CardTitle>
-            <CardDescription>Q4: Terorganisir · Q5: Komunikasi · Q6: Peduli · Q7: Adil</CardDescription>
+            <CardTitle>
+              {q4q7Items.length === 1 ? 'Rata-Rata Q4-Q7 — Performa Dosen' : 'Peringkat — Rata-Rata Q4–Q7 (Performa Dosen)'}
+            </CardTitle>
+            <CardDescription>
+              {q4q7Items.length === 1 ? 'Top/bottom mata kuliah berdasarkan skor ini' : 'Q4: Terorganisir · Q5: Komunikasi · Q6: Peduli · Q7: Adil'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {q4q7Items.length === 1 ? (
+              <CourseRankingSection filter={filter} metric="q4_q7" title="Rata-Rata Q4-Q7 — Performa Dosen" />
+            ) : isLoading ? (
               <ChartState label="Memuat data…" />
             ) : q4q7Items.length === 0 ? (
               <ChartState label="Tidak ada data untuk filter ini." />
             ) : (
-              <ProgressRankList items={q4q7Items} color={chartColors.mid} domain={[3.0, 4.0]} />
+              <ProgressRankList items={q4q7Items} color={chartColors.mid} domain={[3.0, 4.0]} showRank={q4q7Items.length > 1} />
             )}
           </CardContent>
         </Card>
@@ -302,21 +261,37 @@ function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q4 — Perkuliahan Terorganisir</p>
-          <HBarChart data={toHBarData(q4Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
+          <EntityAwareChart
+            items={toHBarData(q4Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+            filter={filter} courseRankingMetric="q24" courseRankingTitle="Q4 — Perkuliahan Terorganisir"
+            onDrill={onDrill}
+          />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q5 — Komunikasi Efektif</p>
-          <HBarChart data={toHBarData(q5Data)} color={chartColors.mid}     domain={[3.0, 4.0]} height={300} />
+          <EntityAwareChart
+            items={toHBarData(q5Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+            filter={filter} courseRankingMetric="q25" courseRankingTitle="Q5 — Komunikasi Efektif"
+            onDrill={onDrill}
+          />
         </CardContent></Card>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q6 — Dosen Peduli Pencapaian</p>
-          <HBarChart data={toHBarData(q6Data)} color={chartColors.light}   domain={[3.0, 4.0]} height={300} />
+          <EntityAwareChart
+            items={toHBarData(q6Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+            filter={filter} courseRankingMetric="q26" courseRankingTitle="Q6 — Dosen Peduli Pencapaian"
+            onDrill={onDrill}
+          />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q7 — Dosen Berlaku Adil</p>
-          <HBarChart data={toHBarData(q7Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
+          <EntityAwareChart
+            items={toHBarData(q7Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+            filter={filter} courseRankingMetric="q27" courseRankingTitle="Q7 — Dosen Berlaku Adil"
+            onDrill={onDrill}
+          />
         </CardContent></Card>
       </div>
     </div>
@@ -325,12 +300,12 @@ function SubTabPerformaDosen({ filter }: { filter: AkademikFilter }) {
 
 // ─── Sub-tab: Performa Mahasiswa ──────────────────────────────────────────────
 
-// q35=Q11, q37=Q12 untuk HBarChart individual; 'perilaku_mahasiswa' adalah
+// q35=Q11, q37=Q12 untuk chart individual; 'perilaku_mahasiswa' adalah
 // grup backend precomputed (Q11-Q12) — dipakai langsung untuk ranking,
 // bukan dihitung ulang dari q35/q37 manual (backend lebih otoritatif).
 const MAHASISWA_KODE_GRUP = ['q35', 'q37', 'perilaku_mahasiswa'] as const;
 
-function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
+function SubTabPerformaMahasiswa({ filter, onDrill }: { filter: AkademikFilter; onDrill: (kode: string) => void }) {
   const { data, isLoading } = useSkorPertanyaanGroup(filter, MAHASISWA_KODE_GRUP);
   const [q11Data, q12Data, perilakuData] = data ?? [null, null, null];
 
@@ -367,16 +342,22 @@ function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Peringkat — Rata-Rata Q11–Q12 (Performa Mahasiswa)</CardTitle>
-            <CardDescription>Q11: Mahasiswa berusaha sungguh-sungguh · Q12: Pengalaman positif</CardDescription>
+            <CardTitle>
+             {q11q12Items.length === 1 ? 'Rata-Rata Q11-Q12 — Performa Mahasiswa' : 'Peringkat — Rata-Rata Q11–Q12 (Performa Mahasiswa)'}
+            </CardTitle>
+            <CardDescription>
+              {q11q12Items.length === 1 ? 'Top/bottom mata kuliah berdasarkan skor ini' : 'Q11: Mahasiswa berusaha sungguh-sungguh · Q12: Pengalaman positif'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
+            {q11q12Items.length === 1 ? (
+              <CourseRankingSection filter={filter} metric="perilaku_mahasiswa" title="Rata-Rata Q11-Q12 — Performa Mahasiswa" />
+            ) : isLoading ? (
               <ChartState label="Memuat data…" />
             ) : q11q12Items.length === 0 ? (
               <ChartState label="Tidak ada data untuk filter ini." />
             ) : (
-              <ProgressRankList items={q11q12Items} color={chartColors.light} domain={[3.0, 4.0]} />
+              <ProgressRankList items={q11q12Items} color={chartColors.light} domain={[3.0, 4.0]} showRank={q11q12Items.length > 1} />
             )}
           </CardContent>
         </Card>
@@ -385,11 +366,19 @@ function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q11 — Mahasiswa Berusaha Sungguh-sungguh</p>
-          <HBarChart data={toHBarData(q11Data)} color={chartColors.mid}     domain={[3.0, 4.0]} height={300} />
+          <EntityAwareChart
+            items={toHBarData(q11Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+            filter={filter} courseRankingMetric="q35" courseRankingTitle="Q11 — Mahasiswa Berusaha Sungguh-Sungguh"
+            onDrill={onDrill}
+          />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q12 — Pengalaman Belajar Positif</p>
-          <HBarChart data={toHBarData(q12Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300} />
+          <EntityAwareChart
+            items={toHBarData(q12Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+            filter={filter} courseRankingMetric="q37" courseRankingTitle="Q12 — Pengalaman Belajar Positif"
+            onDrill={onDrill}
+          />
         </CardContent></Card>
       </div>
     </div>
@@ -398,11 +387,11 @@ function SubTabPerformaMahasiswa({ filter }: { filter: AkademikFilter }) {
 
 // ─── Sub-tab: Sarana Prasarana ────────────────────────────────────────────────
 
-// q29=Q9, q30=Q10 untuk HBarChart individual; 'sarana_prasarana' adalah
+// q29=Q9, q30=Q10 untuk chart individual; 'sarana_prasarana' adalah
 // grup backend precomputed (Q9-Q10), dipakai langsung untuk ranking.
 const SARANA_KODE_GRUP = ['q29', 'q30', 'sarana_prasarana'] as const;
 
-function SubTabSarana({ filter }: { filter: AkademikFilter }) {
+function SubTabSarana({ filter, onDrill }: { filter: AkademikFilter; onDrill: (kode: string) => void }) {
   const { data, isLoading } = useSkorPertanyaanGroup(filter, SARANA_KODE_GRUP);
   const [q9Data, q10Data, saranaData] = data ?? [null, null, null];
 
@@ -423,16 +412,22 @@ function SubTabSarana({ filter }: { filter: AkademikFilter }) {
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>Peringkat — Rata-Rata Q9–Q10 (Sarana Prasarana)</CardTitle>
-          <CardDescription>Q9: Sarana prasarana memadai · Q10: Fasilitas pendukung di luar kuliah</CardDescription>
+          <CardTitle>
+            {q9q10Items.length === 1 ? 'Rata-Rata Q9-Q10 — Sarana Prasarana' : 'Peringkat — Rata-Rata Q9–Q10 (Sarana Prasarana)'}
+          </CardTitle>
+          <CardDescription>
+            {q9q10Items.length === 1 ? 'Top/bottom mata kuliah berdasarkan skor ini' : 'Q9: Sarana prasarana memadai · Q10: Fasilitas pendukung di luar kuliah'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {q9q10Items.length === 1 ? (
+            <CourseRankingSection filter={filter} metric="sarana_prasarana" title="Rata-Rata Q9-Q10 — Sarana Prasarana" />
+          ) : isLoading ? (
             <ChartState label="Memuat data…" />
           ) : q9q10Items.length === 0 ? (
             <ChartState label="Tidak ada data untuk filter ini." />
           ) : (
-            <ProgressRankList items={q9q10Items} color={chartColors.warning} domain={[3.0, 4.0]} />
+            <ProgressRankList items={q9q10Items} color={chartColors.warning} domain={[3.0, 4.0]} showRank={q9q10Items.length > 1} />
           )}
         </CardContent>
       </Card>
@@ -440,11 +435,19 @@ function SubTabSarana({ filter }: { filter: AkademikFilter }) {
       <div className="grid grid-cols-2 gap-4">
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q9 — Sarana Prasarana Memadai</p>
-          <HBarChart data={toHBarData(q9Data)} color={chartColors.warning} domain={[3.0, 4.0]} height={300} />
+          <EntityAwareChart
+            items={toHBarData(q9Data)} color={chartColors.warning} domain={[3.0, 4.0]} height={300}
+            filter={filter} courseRankingMetric="q29" courseRankingTitle="Q9 — Sarana Prasarana Memadai"
+            onDrill={onDrill}
+          />
         </CardContent></Card>
         <Card><CardContent className="pt-5">
           <p className="text-[12px] font-semibold text-text-dark mb-2">Q10 — Fasilitas Pendukung di Luar Kuliah</p>
-          <HBarChart data={toHBarData(q10Data)} color={chartColors.light}   domain={[3.0, 4.0]} height={300} />
+          <EntityAwareChart
+            items={toHBarData(q10Data)} color={chartColors.light} domain={[3.0, 4.0]} height={300}
+            filter={filter} courseRankingMetric="q30" courseRankingTitle="Q10 — Fasilitas Pendukung di Luar Kuliah"
+            onDrill={onDrill}
+          />
         </CardContent></Card>
       </div>
     </div>
@@ -453,7 +456,7 @@ function SubTabSarana({ filter }: { filter: AkademikFilter }) {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-export default function TabPelaksanaan({ filter }: TabPelaksanaanProps) {
+export default function TabPelaksanaan({ filter, onDrill }: TabPelaksanaanProps) {
   return (
     <Tabs defaultValue="rancangan">
       <TabsList className="mb-4">
@@ -462,10 +465,10 @@ export default function TabPelaksanaan({ filter }: TabPelaksanaanProps) {
         <TabsTrigger value="mahasiswa">Performa Mahasiswa</TabsTrigger>
         <TabsTrigger value="sarana">Sarana Prasarana</TabsTrigger>
       </TabsList>
-      <TabsContent value="rancangan"><SubTabRancangan         filter={filter} /></TabsContent>
-      <TabsContent value="dosen">    <SubTabPerformaDosen     filter={filter} /></TabsContent>
-      <TabsContent value="mahasiswa"><SubTabPerformaMahasiswa filter={filter} /></TabsContent>
-      <TabsContent value="sarana">   <SubTabSarana            filter={filter} /></TabsContent>
+      <TabsContent value="rancangan"><SubTabRancangan         filter={filter} onDrill={onDrill} /></TabsContent>
+      <TabsContent value="dosen">    <SubTabPerformaDosen     filter={filter} onDrill={onDrill} /></TabsContent>
+      <TabsContent value="mahasiswa"><SubTabPerformaMahasiswa filter={filter} onDrill={onDrill} /></TabsContent>
+      <TabsContent value="sarana">   <SubTabSarana            filter={filter} onDrill={onDrill} /></TabsContent>
     </Tabs>
   );
 }

@@ -58,4 +58,5 @@ export interface GroupDataItem {
   label: string;
   kode:  string;
   avg:   number;
+  delta?: number | null;
 }

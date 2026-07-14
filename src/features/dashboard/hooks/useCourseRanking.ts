@@ -5,15 +5,20 @@ import type { AkademikFilter } from '@/features/dashboard/types';
 
 const DEFAULT_LIMIT = 5;
 
-export function useCourseRanking(filter: AkademikFilter, limit: number = DEFAULT_LIMIT) {
+export function useCourseRanking(
+  filter: AkademikFilter,
+  metric: string = 'overall',
+  limit:  number = DEFAULT_LIMIT,
+) {
   return useAkademikQuery(
-    signal => fetchAkademikCourseRanking(filter, signal, limit),
+    signal => fetchAkademikCourseRanking(filter, signal, limit, metric),
     [
       filter.tahunAjaran,
       filter.semester,
       filter.fakultas,
       filter.programStudi,
       filter.jenjang.join(','),
+      metric, 
       limit,
     ],
   );

@@ -3,7 +3,7 @@ import { fetchAkademikGradeTrend } from '@/features/dashboard/api/akademik';
 import { useAkademikQuery } from '@/features/dashboard/hooks/useAkademikQuery';
 import type { AkademikFilter } from '@/features/dashboard/types';
 
-const DEFAULT_N_SEMESTER = 6;
+const DEFAULT_N_SEMESTER = 18;
 
 export function useGradeTrend(filter: AkademikFilter, nSemester: number = DEFAULT_N_SEMESTER) {
   return useAkademikQuery(

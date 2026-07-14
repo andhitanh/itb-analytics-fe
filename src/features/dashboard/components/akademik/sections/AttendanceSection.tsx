@@ -1,4 +1,5 @@
-import { HBarChart } from "@/features/dashboard/components/shared-charts/HBarChart";
+import { EntityAwareChart } from "@/features/dashboard/components/shared-charts/EntityAwareChart";
+import { ChartState } from '@/features/dashboard/components/shared-charts/ChartState';
 import { TrendBadge } from "@/components/ui/domain-badges";
 import { useAttendance } from "@/features/dashboard/hooks/useAttendance";
 import type { AttendanceItem } from "@/features/dashboard/api/akademik";
@@ -36,7 +37,14 @@ export function AttendanceSection({
 
   const chartData = items
     .filter(item => pickCurr(item, type) !== null)
-    .map(item => ({ label: item.label, kode: item.kode, avg: pickCurr(item, type) as number }));
+    .map(item => ({
+      label: item.label,
+      kode:  item.kode,
+      avg:   pickCurr(item, type) as number,
+      delta: pickPrev(item, type) !== null
+        ? parseFloat(((pickCurr(item, type) as number) - (pickPrev(item, type) as number)).toFixed(1))
+        : null,
+    }));
 
   const avgCurr = average(items.map(item => pickCurr(item, type)));
   const avgPrev = average(items.map(item => pickPrev(item, type)));
@@ -57,20 +65,17 @@ export function AttendanceSection({
       </div>
       <p className="text-[11.5px] text-neutral mb-3.5">{avgLabel}</p>
       {isLoading ? (
-        <div className="h-[300px] flex items-center justify-center text-[12px] text-neutral">
-          Memuat data kehadiran…
-        </div>
+        <ChartState label="Memuat data kehadiran…" height={300} />
       ) : chartData.length === 0 ? (
-        <div className="h-[300px] flex items-center justify-center text-[12px] text-neutral">
-          Tidak ada data untuk filter ini.
-        </div>
+        <ChartState label="Tidak ada data untuk filter ini." height={300} />
       ) : (
-        <HBarChart
-          data={chartData}
+        <EntityAwareChart
+         items={chartData}
           color={color}
           domain={[70, 100]}
           height={300}
           labelFormatter={(v) => `${v}%`}
+          hideProfileIfRedundant
         />
       )}
     </div>

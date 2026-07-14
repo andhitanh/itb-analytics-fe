@@ -274,13 +274,15 @@ export interface CourseRankingItem {
   nama_prodi_id:     string;
   kode_fakultas:     string;
   jumlah_kelas:      number;
-  avg_skor:          number | null;
+  jumlah_mahasiswa:  number;
+  skor:              number | null;
   prev_skor:         number | null;
   prev_period_label: string | null;
 }
 
 export interface CourseRankingResponse {
   limit:  number;
+  metric: string;
   top:    CourseRankingItem[];
   bottom: CourseRankingItem[];
 }
@@ -291,10 +293,11 @@ export async function fetchAkademikCourseRanking(
   filter:  AkademikFilter,
   signal?: AbortSignal,
   limit:   number = DEFAULT_COURSE_RANKING_LIMIT,
+  metric:  string = 'overall',
 ): Promise<CourseRankingResponse> {
   const { data } = await api.get<CourseRankingResponse>(
     '/api/dashboard/akademik/course-ranking',
-    { params: buildAkademikParams(filter, { limit }), signal },
+    { params: buildAkademikParams(filter, { limit, metric }), signal },
   );
   return data;
 }

@@ -1,11 +1,11 @@
 import {
-  LineChart, Line, BarChart, Bar,
+  LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { RechartsTooltip }  from '@/components/ui/recharts-tooltip';
 import { ProgressRankList } from '@/features/dashboard/components/shared-layouts/ProgressRankList';
-import { HBarChart }        from '@/features/dashboard/components/shared-charts/HBarChart';
+import { EntityAwareChart } from '@/features/dashboard/components/shared-charts/EntityAwareChart';
 import { ScoreHeatmap }     from '@/features/dashboard/components/akademik/sections/ScoreHeatmap';
 import { useSkorPertanyaan } from '@/features/dashboard/hooks/useSkorPertanyaan';
 import { useGradeTrend }     from '@/features/dashboard/hooks/useGradeTrend';
@@ -16,13 +16,15 @@ import {
   QUESTIONS_SHORT, QUESTIONS_FULL,
   ISSUES_MAHASISWA, ISSUES_DOSEN,
 } from '@/features/dashboard/mocks/mockData';
+import { METRIC_OVERALL } from '@/features/dashboard/constants/courseRankingMetrics';
 import { chartColors, AXIS_STYLE } from '@/styles/chart-token';
 import type { AkademikFilter } from '@/features/dashboard/types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface TabInfoUmumProps {
-  filter: AkademikFilter;
+  filter:  AkademikFilter;
+  onDrill: (kode: string) => void;
 }
 
 // ─── Local: non-interactive issue preview ─────────────────────────────────────
@@ -65,7 +67,7 @@ function StaticIssueList({
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
+export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
   // Satu fetch dipakai bersama ScoreHeatmap DAN ranking Q1-Q12 di card
   // sebelahnya (keduanya mounted bersamaan di baris 1) — hindari 2 request
   // duplikat untuk data identik, sama seperti pola grade-distribution.
@@ -84,7 +86,8 @@ export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
   const topQItems    = [...allQItems].sort((a, b) => b.value - a.value).slice(0, 5);
   const bottomQItems = [...allQItems].sort((a, b) => a.value - b.value).slice(0, 5);
 
-  // Faculty avg bar (filter-aware)
+  // Rata-rata skor per fakultas/prodi (filter-aware) — otomatis collapse ke
+  // CourseRankingSection lewat EntityAwareChart kalau items.length===1.
   const { data: overallData, isLoading: overallLoading } = useSkorPertanyaan(filter, 'overall');
   const overallGroupData = toHBarData(overallData);
   const groupLabel       = filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas';
@@ -124,14 +127,14 @@ export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
                   <p className="text-[11px] font-bold text-score-high-text uppercase tracking-wide mb-2">
                     ▲ Skor Tertinggi
                   </p>
-                  <ProgressRankList items={topQItems} color={chartColors.success} domain={[2.5, 4.0]} mode="top" />
+                  <ProgressRankList items={topQItems} color={chartColors.success} domain={[2.5, 4.0]} mode="top" showRank={topQItems.length > 1} />
                 </div>
                 <div className="h-px bg-border" />
                 <div>
                   <p className="text-[11px] font-bold text-score-low-text uppercase tracking-wide mb-2">
                     ▼ Skor Terendah
                   </p>
-                  <ProgressRankList items={bottomQItems} color={chartColors.danger} domain={[2.5, 4.0]} mode="bottom" />
+                  <ProgressRankList items={bottomQItems} color={chartColors.danger} domain={[2.5, 4.0]} mode="bottom" showRank={bottomQItems.length > 1} />
                 </div>
               </>
             )}
@@ -155,66 +158,72 @@ export default function TabInfoUmum({ filter }: TabInfoUmumProps) {
         </Card>
       </div>
 
-      {/* Baris 2: Temporal trend + Faculty bar */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Tren Rata-Rata Skor Kuesioner ITB</CardTitle>
-            <CardDescription>Rata-rata keseluruhan 12 pertanyaan lintas semua fakultas</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {trendLoading ? (
-              <div className="h-[220px] flex items-center justify-center text-[12px] text-neutral">
-                Memuat data tren…
-              </div>
-            ) : temporalChartData.length === 0 ? (
-              <div className="h-[220px] flex items-center justify-center text-[12px] text-neutral">
-                Tidak ada data untuk filter ini.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={temporalChartData} margin={{ top: 4, right: 12, bottom: 0, left: -16 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" />
-                  <XAxis dataKey="semester" tick={AXIS_STYLE} />
-                  <YAxis domain={[3.2, 3.9]} tick={AXIS_STYLE} tickFormatter={v => v.toFixed(1)} />
-                  <Tooltip content={<RechartsTooltip />} />
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                  <Line dataKey="avg"  name="Rata-rata umum" stroke={chartColors.primary} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-                  <Line dataKey="q1q3" name="Q1-Q3 (Luaran)" stroke={chartColors.mid}     strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
-                  <Line dataKey="q4q7" name="Q4-Q7 (Dosen)"  stroke={chartColors.light}   strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
+      {/* Baris 2a: Temporal trend (full width) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Tren Rata-Rata Skor Kuesioner ITB</CardTitle>
+          <CardDescription>Rata-rata keseluruhan 12 pertanyaan lintas semua fakultas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {trendLoading ? (
+            <div className="h-[220px] flex items-center justify-center text-[12px] text-neutral">
+              Memuat data tren…
+            </div>
+          ) : temporalChartData.length === 0 ? (
+            <div className="h-[220px] flex items-center justify-center text-[12px] text-neutral">
+              Tidak ada data untuk filter ini.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={temporalChartData} margin={{ top: 4, right: 12, bottom: 0, left: -16 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" />
+                <XAxis dataKey="semester" tick={AXIS_STYLE} />
+                <YAxis domain={[3.2, 3.9]} tick={AXIS_STYLE} tickFormatter={v => v.toFixed(1)} />
+                <Tooltip content={<RechartsTooltip />} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+                <Line dataKey="avg"  name="Rata-rata umum" stroke={chartColors.primary} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
+                <Line dataKey="q1q3" name="Q1-Q3 (Luaran)" stroke={chartColors.mid}     strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
+                <Line dataKey="q4q7" name="Q4-Q7 (Dosen)"  stroke={chartColors.light}   strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Rata-Rata Skor per {groupLabel}</CardTitle>
-            <CardDescription>Diurutkan tertinggi — sesuai filter aktif</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {overallLoading ? (
-              <div className="h-[300px] flex items-center justify-center text-[12px] text-neutral">
-                Memuat data…
-              </div>
-            ) : overallGroupData.length === 0 ? (
-              <div className="h-[300px] flex items-center justify-center text-[12px] text-neutral">
-                Tidak ada data untuk filter ini.
-              </div>
-            ) : (
-              <HBarChart data={overallGroupData} color={chartColors.primary} domain={[3.0, 4.0]} />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Baris 2b: Rata-rata skor per fakultas/prodi — collapse otomatis */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Rata-Rata Skor per {groupLabel}</CardTitle>
+          <CardDescription>Diurutkan tertinggi — sesuai filter aktif</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {overallLoading ? (
+            <div className="h-[300px] flex items-center justify-center text-[12px] text-neutral">
+              Memuat data…
+            </div>
+          ) : (
+            <EntityAwareChart
+              items={overallGroupData}
+              color={chartColors.primary}
+              domain={[3.0, 4.0]}
+              height={300}
+              filter={filter}
+              courseRankingMetric={METRIC_OVERALL.metric}
+              courseRankingTitle={METRIC_OVERALL.title}
+              onDrill={onDrill}
+            />
+          )}
+        </CardContent>
+      </Card>
 
       {/* Baris 3: Isu dominan (ringkasan, non-interactive) */}
       <Card>
         <CardHeader>
-          <CardTitle>Isu Dominan dari Komentar Kuesioner</CardTitle>
+          <CardTitle>{overallGroupData.length === 1 ? METRIC_OVERALL.title : `Rata-Rata Skor per ${groupLabel}`}</CardTitle>
           <CardDescription>
-            Top 5 tema terbanyak dari analisis teks komentar mahasiswa dan refleksi dosen — 2023/24-2
+            {overallGroupData.length === 1
+              ? 'Top/bottom mata kuliah berdasarkan rata-rata skor kuesioner'
+              : 'Diurutkan tertinggi — sesuai filter aktif'}
           </CardDescription>
         </CardHeader>
         <CardContent>
