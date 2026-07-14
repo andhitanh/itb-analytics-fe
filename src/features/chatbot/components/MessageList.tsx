@@ -42,7 +42,25 @@ function EmptyState({ onSelectPrompt }: EmptyStateProps) {
             key={prompt}
             variant="outline"
             size="sm"
-            className="h-auto whitespace-normal px-3 py-2 text-left font-normal"
+            className="
+              h-auto
+              whitespace-normal
+              rounded-xl
+              border
+              border-border/70
+              bg-background
+              px-4
+              py-3
+              text-left
+              font-normal
+              shadow-sm
+              transition-colors
+              duration-200
+              hover:border-primary/30
+              hover:bg-accent/40
+              focus-visible:ring-2
+              focus-visible:ring-primary/20
+            "
             onClick={() => onSelectPrompt(prompt)}
           >
             {prompt}

@@ -3,33 +3,33 @@ import { useUser } from '@/context/UserContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarItem } from './sidebar/sidebar-item';
-import { ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import logoSidebar from '@/assets/images/logo-sidebar.png';
 
 import dashboardIcon    from '@/assets/icons/dashboard-icon.svg';
-import fullDataIcon     from '@/assets/icons/full-data-icon.svg';
+// import fullDataIcon     from '@/assets/icons/full-data-icon.svg';
 import chatbotIcon      from '@/assets/icons/chatbot-icon.svg';
-import uploadDataIcon   from '@/assets/icons/upload-data-icon.svg';
-import accMgmtIcon      from '@/assets/icons/acc-management-icon.svg';
-import settingsIcon     from '@/assets/icons/settings-icon.svg';
+// import uploadDataIcon   from '@/assets/icons/upload-data-icon.svg';
+// import accMgmtIcon      from '@/assets/icons/acc-management-icon.svg';
+// import settingsIcon     from '@/assets/icons/settings-icon.svg';
 
 // ─── Menu definitions ─────────────────────────────────────────────────────────
 
 const ADMIN_MENU = [
   { label: 'Dashboard',      icon: dashboardIcon,  path: '/dashboard' },
-  { label: 'Data Lengkap',   icon: fullDataIcon,   path: '/data-lengkap' },
+  // { label: 'Data Lengkap',   icon: fullDataIcon,   path: '/data-lengkap' },
   { label: 'Chatbot',        icon: chatbotIcon,    path: '/chatbot' },
-  { label: 'Unggah Data',    icon: uploadDataIcon, path: '/unggah-data' },
-  { label: 'Manajemen Akun', icon: accMgmtIcon,    path: '/manajemen-akun' },
-  { label: 'Pengaturan',     icon: settingsIcon,   path: '/pengaturan' },
+  // { label: 'Unggah Data',    icon: uploadDataIcon, path: '/unggah-data' },
+  // { label: 'Manajemen Akun', icon: accMgmtIcon,    path: '/manajemen-akun' },
+  // { label: 'Pengaturan',     icon: settingsIcon,   path: '/pengaturan' },
 ];
 
 const USER_MENU = [
   { label: 'Dashboard',       icon: dashboardIcon, path: '/dashboard' },
-  { label: 'Data Mata Kuliah',icon: fullDataIcon,  path: '/data-mata-kuliah' },
+  // { label: 'Data Mata Kuliah',icon: fullDataIcon,  path: '/data-mata-kuliah' },
   { label: 'Chatbot',         icon: chatbotIcon,   path: '/chatbot' },
-  { label: 'Pengaturan',      icon: settingsIcon,  path: '/pengaturan' },
+  // { label: 'Pengaturan',      icon: settingsIcon,  path: '/pengaturan' },
 ];
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────

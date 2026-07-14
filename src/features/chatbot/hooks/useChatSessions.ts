@@ -1,6 +1,7 @@
 // src/features/chatbot/hooks/useChatSessions.ts
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { deleteSession, fetchSessions } from '@/features/chatbot/api/sessions';
+import { useUser } from '@/context/UserContext';
 import type { SessionSummary } from '@/features/chatbot/types';
 
 export interface UseChatSessionsResult {
@@ -22,6 +23,9 @@ export interface UseChatSessionsResult {
  * "New Chat" instan tanpa round-trip jaringan, sama seperti perilaku ChatGPT.
  */
 export function useChatSessions(): UseChatSessionsResult {
+  const { user } = useUser();
+  const activeRoleId = user?.activeRole.userRoleId;
+
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeSessionId, setActiveSessionId] = useState<string>(() => crypto.randomUUID());
@@ -44,6 +48,28 @@ export function useChatSessions(): UseChatSessionsResult {
   }, []);
 
   useEffect(() => refreshSessions(), [refreshSessions]);
+
+  // Riwayat percakapan di backend difilter per role aktif (lihat
+  // chat.py: `WHERE user_id = %s AND active_role = %s::jsonb`) -- setiap
+  // role adalah "ruang kerja" percakapan yang terpisah. Jadi saat user
+  // ganti role lewat dropdown profil (UserContext.setActiveRole), 2 hal
+  // harus terjadi otomatis, tanpa perlu refresh manual:
+  //   1. Sidebar di-refresh -- daftar percakapan role lama tidak relevan lagi.
+  //   2. Percakapan aktif di ChatWindow direset ke sesi baru -- melanjutkan
+  //      sesi lama di bawah role baru akan tercampur konteks scope yang beda.
+  //
+  // activeRoleIdRef dipakai (bukan langsung reset di setiap render) supaya
+  // efek ini HANYA jalan saat activeRoleId benar-benar BERUBAH -- bukan saat
+  // mount pertama (di mount pertama, ref sudah sama dengan activeRoleId saat
+  // itu, jadi tidak trigger reset yang tidak perlu).
+  const activeRoleIdRef = useRef(activeRoleId);
+  useEffect(() => {
+    if (activeRoleIdRef.current === activeRoleId) return;
+    activeRoleIdRef.current = activeRoleId;
+
+    setActiveSessionId(crypto.randomUUID());
+    refreshSessions();
+  }, [activeRoleId, refreshSessions]);
 
   const startNewChat = useCallback(() => {
     setActiveSessionId(crypto.randomUUID());

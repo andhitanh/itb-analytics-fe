@@ -55,6 +55,7 @@ export async function streamChat(
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
+  let receivedTerminalEvent = false;
 
   try {
     while (true) {
@@ -89,11 +90,22 @@ export async function streamChat(
         if (parsed.event === 'node_update') {
           callbacks.onNodeUpdate?.(parsed);
         } else if (parsed.event === 'final_response') {
+          receivedTerminalEvent = true;
           callbacks.onFinalResponse(parsed);
         } else if (parsed.event === 'error') {
+          receivedTerminalEvent = true;
           callbacks.onError(parsed.message);
         }
       }
+    }
+
+    // Stream ditutup server (done: true) tapi tidak pernah mengirim event
+    // final_response ATAU error -- ini terjadi kalau backend crash di tengah
+    // proses tanpa pengaman try/except (mis. exception mentah di 1 node graph)
+    // sehingga koneksi terputus diam-diam. Tanpa pengaman ini, UI akan macet
+    // permanen menampilkan progress indicator terakhir yang sempat diterima.
+    if (!signal?.aborted && !receivedTerminalEvent) {
+      callbacks.onError('Terjadi kesalahan saat memproses pertanyaan Anda. Silakan coba lagi.');
     }
   } finally {
     // Wajib dilepas eksplisit: kalau reader ditinggal locked (misal karena
