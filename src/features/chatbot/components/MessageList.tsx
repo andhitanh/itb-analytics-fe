@@ -9,7 +9,7 @@ import { ErrorBanner } from '@/features/chatbot/components/ErrorBanner';
 import type { ChatUIMessage, ChatProgress } from '@/features/chatbot/hooks/useChatStream';
 
 const SUGGESTED_PROMPTS = [
-  'Berapa rata-rata IPK di prodi saya?',
+  'Tampilkan seluruh fakultas di ITB?',
   'Bagaimana tren nilai mata kuliah tahun ini dibanding tahun lalu?',
   'Mata kuliah apa yang punya skor evaluasi terendah?',
 ];

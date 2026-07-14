@@ -29,6 +29,64 @@ export interface TableArtifact {
 
 export type ChatArtifact = ChartArtifact | TableArtifact;
 
+// ─── Chart Interpreter (cermin dari ChartContext di agent/state.py) ─────────
+//
+// Dikirim dari card dashboard lewat tombol "Tanya insight" -- lihat
+// ChartInsightButton.tsx. Bentuknya harus align 1:1 dengan backend karena
+// divalidasi ketat sebagai Pydantic model (ChartContext.model_validate) di
+// chat_service.py; kalau field wajib hilang atau chart_type di luar 10 nilai
+// ini, backend menolak dengan 422 sebelum stream dimulai.
+
+export type ChartType =
+  | 'entity_comparison_bar_chart'
+  | 'course_ranking_top_bottom_list'
+  | 'single_entity_percentage_value'
+  | 'grade_distribution_stacked_bar_chart'
+  | 'grade_distribution_single_entity_bar_chart'
+  | 'score_trend_line_chart'
+  | 'score_heatmap_matrix_chart'
+  | 'grading_composition_stacked_bar_chart'
+  | 'grading_composition_single_entity_bar_chart'
+  | 'score_by_sks_bucket_bar_chart';
+
+export interface QuestionReference {
+  kode_pertanyaan_frontend: string;
+  pertanyaan: string;
+}
+
+export interface ChartFiltersApplied {
+  tahun_ajaran?: string;
+  semester?: number[];
+  jenjang?: string[];
+  kode_fakultas?: string[];
+  no_prodi?: number[];
+}
+
+export interface ChartContext {
+  chart_type: ChartType;
+  title: string;
+  x_axis_label?: string;
+  y_axis_label?: string;
+  series: Record<string, unknown>[];
+  filters_applied?: ChartFiltersApplied;
+  hint: string[];
+  jumlah_kelas_aktif?: number;
+  question_reference?: Record<string, QuestionReference>;
+}
+
+/** Kalimat tetap yang dikirim tombol "Tanya insight" -- satu sumber, dipakai
+ *  di seluruh frontend (tombol & auto-trigger ChatbotPage) supaya konsisten
+ *  kalau backend suatu saat mengubah kalimat trigger-nya. */
+export const CHART_INSIGHT_QUERY = 'Insight apa yang bisa saya ambil dari grafik ini?';
+
+/** State yang dibawa lewat navigate('/chatbot', { state }) saat tombol
+ *  "Tanya insight" diklik dari card dashboard -- lihat ChartInsightButton.tsx
+ *  (pengirim) dan ChatbotPage.tsx (penerima, via useLocation().state). */
+export interface ChartInsightNavigationState {
+  chartContext: ChartContext;
+  autoQuery: string;
+}
+
 export interface ChatResponse {
   response_type: 'text' | 'mixed' | 'clarification' | 'error';
   narrative: string;

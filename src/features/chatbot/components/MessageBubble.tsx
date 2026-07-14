@@ -1,5 +1,5 @@
 // src/features/chatbot/components/MessageBubble.tsx
-import { Bot } from 'lucide-react';
+import { Bot, BarChart2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useUser } from '@/context/UserContext';
 import { getInitials } from '@/types/user';
@@ -23,8 +23,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   if (message.role === 'user') {
     return (
       <div className="flex items-start justify-end gap-3">
-        <div className="max-w-[75%] rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">
-          {message.content}
+        <div className="flex max-w-[75%] flex-col items-end gap-1.5">
+          {message.chartContextTitle && (
+            <div className="flex items-center gap-1.5 rounded-md border border-border bg-cream px-2.5 py-1 text-xs text-primary">
+              <BarChart2 className="size-3.5 shrink-0" />
+              <span className="truncate">{message.chartContextTitle}</span>
+            </div>
+          )}
+          <div className="rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+            {message.content}
+          </div>
         </div>
         <Avatar className="mt-0.5 shrink-0">
           <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
@@ -38,7 +46,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   return (
     <div className="flex items-start gap-3">
       <Avatar className="mt-0.5 shrink-0">
-        <AvatarFallback className="bg-secondary text-primary">
+        <AvatarFallback className="bg-cream text-primary">
           <Bot className="size-4" />
         </AvatarFallback>
       </Avatar>

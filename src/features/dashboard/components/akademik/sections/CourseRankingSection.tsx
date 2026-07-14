@@ -4,6 +4,8 @@ import { useCourseRanking } from '@/features/dashboard/hooks/useCourseRanking';
 import type { CourseRankingItem } from '@/features/dashboard/api/akademik';
 import type { AkademikFilter } from '@/features/dashboard/types';
 import { chartColors } from '@/styles/chart-token';
+import { ChartInsightButton } from '@/features/dashboard/components/shared-charts/ChartInsightButton';
+import { buildCourseRankingChartContext } from '@/features/dashboard/components/shared-charts/courseRankingChartContext';
 
 // ─── CourseCard — local, hanya dipakai di section ini ─────────────────────────
 
@@ -88,52 +90,59 @@ export function CourseRankingSection({
   ]).size;
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Bottom {data?.limit ?? limit} {title}</CardTitle>
-          <CardDescription>
-            {hasOverlap
-              ? `Prodi ini hanya punya ${totalMatkul} mata kuliah aktif — seluruhnya ditampilkan`
-              : 'Berdasarkan rata-rata skor kuesioner — sesuai filter aktif'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Memuat data…</div>
-          ) : !data || data.bottom.length === 0 ? (
-            <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Tidak ada data untuk filter ini.</div>
-          ) : (
-            data.bottom.map((c, i) => (
-              <CourseCard
-                key={c.kode_matkul}
-                course={c}
-                rank={i + 1}
-                mode="bottom"
-                isOverlapping={overlappingCodes.has(c.kode_matkul)}
-              />
-            ))
-          )}
-        </CardContent>
-      </Card>
+    <div className="space-y-2">
+      <div className="flex items-center justify-end">
+        <ChartInsightButton
+          chartContext={buildCourseRankingChartContext(metric, title, data, filter)}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Bottom {data?.limit ?? limit} {title}</CardTitle>
+            <CardDescription>
+              {hasOverlap
+                ? `Prodi ini hanya punya ${totalMatkul} mata kuliah aktif — seluruhnya ditampilkan`
+                : 'Berdasarkan rata-rata skor kuesioner — sesuai filter aktif'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Memuat data…</div>
+            ) : !data || data.bottom.length === 0 ? (
+              <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Tidak ada data untuk filter ini.</div>
+            ) : (
+              data.bottom.map((c, i) => (
+                <CourseCard
+                  key={c.kode_matkul}
+                  course={c}
+                  rank={i + 1}
+                  mode="bottom"
+                  isOverlapping={overlappingCodes.has(c.kode_matkul)}
+                />
+              ))
+            )}
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Top {data?.limit ?? limit} {title}</CardTitle>
-          <CardDescription>Berdasarkan rata-rata skor kuesioner — sesuai filter aktif</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Memuat data…</div>
-          ) : !data || data.top.length === 0 ? (
-            <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Tidak ada data untuk filter ini.</div>
-          ) : (
-            data.top.map((c, i) => (
-              <CourseCard key={c.kode_matkul} course={c} rank={i + 1} mode="top" />
-            ))
-          )}
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Top {data?.limit ?? limit} {title}</CardTitle>
+            <CardDescription>Berdasarkan rata-rata skor kuesioner — sesuai filter aktif</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Memuat data…</div>
+            ) : !data || data.top.length === 0 ? (
+              <div className="h-[200px] flex items-center justify-center text-[12px] text-neutral">Tidak ada data untuk filter ini.</div>
+            ) : (
+              data.top.map((c, i) => (
+                <CourseCard key={c.kode_matkul} course={c} rank={i + 1} mode="top" />
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

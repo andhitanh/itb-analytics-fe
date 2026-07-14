@@ -1,11 +1,16 @@
 // src/features/chatbot/hooks/useChatStream.ts
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { streamChat } from '@/features/chatbot/api/streamChat';
-import type { ChatArtifact, ChatMessage } from '@/features/chatbot/types';
+import type { ChartContext, ChatArtifact, ChatMessage } from '@/features/chatbot/types';
 
 export interface ChatUIMessage extends ChatMessage {
   id: string;
   artifacts?: ChatArtifact[];
+  /** Judul chart asal, kalau pesan ini dipicu tombol "Tanya insight" di
+   *  dashboard -- dipakai MessageBubble untuk menampilkan chip konteks,
+   *  supaya riwayat chat tidak terlihat seperti kalimat identik berulang
+   *  saat user memicu insight dari beberapa chart berbeda. */
+  chartContextTitle?: string;
 }
 
 export interface ChatProgress {
@@ -18,7 +23,7 @@ export interface UseChatStreamResult {
   progress: ChatProgress | null;
   isStreaming: boolean;
   error: string | null;
-  sendMessage: (query: string) => Promise<void>;
+  sendMessage: (query: string, chartContext?: ChartContext) => Promise<void>;
   abort: () => void;
   loadMessages: (initial: ChatMessage[]) => void;
 }
@@ -50,7 +55,7 @@ export function useChatStream(sessionId: string): UseChatStreamResult {
   }, []);
 
   const sendMessage = useCallback(
-    async (query: string) => {
+    async (query: string, chartContext?: ChartContext) => {
       const trimmed = query.trim();
       if (!trimmed || isStreaming) return;
 
@@ -61,7 +66,15 @@ export function useChatStream(sessionId: string): UseChatStreamResult {
       setError(null);
       setProgress(null);
       setIsStreaming(true);
-      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: trimmed }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: 'user',
+          content: trimmed,
+          ...(chartContext && { chartContextTitle: chartContext.title }),
+        },
+      ]);
 
       await streamChat(
         trimmed,
@@ -89,6 +102,7 @@ export function useChatStream(sessionId: string): UseChatStreamResult {
           },
         },
         controller.signal,
+        chartContext,
       );
 
       if (!controller.signal.aborted) setIsStreaming(false);

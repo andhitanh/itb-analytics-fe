@@ -6,6 +6,8 @@ import type { AkademikFilter } from '@/features/dashboard/types';
 import { explodeGradeToProfile } from '@/features/dashboard/utils/gradeDistribution';
 import { HBarChart } from '@/features/dashboard/components/shared-charts/HBarChart';
 import { ChartState } from '@/features/dashboard/components/shared-charts/ChartState';
+import { ChartInsightButton } from '@/features/dashboard/components/shared-charts/ChartInsightButton';
+import { buildGradeDistributionChartContext } from '@/features/dashboard/components/shared-charts/gradeDistributionChartContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -195,8 +197,15 @@ export function GradeDistributionSection({ filter, data, isLoading }: GradeDistr
 
       <Card>
         <CardHeader>
-          <CardTitle>Distribusi Grade per {groupLabel}</CardTitle>
-          <CardDescription>Diurutkan sesuai respons backend — sesuai filter aktif</CardDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <CardTitle>Distribusi Grade per {groupLabel}</CardTitle>
+              <CardDescription>Diurutkan sesuai respons backend — sesuai filter aktif</CardDescription>
+            </div>
+            {!isLoading && items.length > 0 && (
+              <ChartInsightButton chartContext={buildGradeDistributionChartContext(filter, data)} />
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (

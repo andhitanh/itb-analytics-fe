@@ -4,6 +4,8 @@ import { TrendBadge } from "@/components/ui/domain-badges";
 import { useAttendance } from "@/features/dashboard/hooks/useAttendance";
 import type { AttendanceItem } from "@/features/dashboard/api/akademik";
 import type { AkademikFilter } from "@/features/dashboard/types";
+import { ChartInsightButton } from "@/features/dashboard/components/shared-charts/ChartInsightButton";
+import { buildAttendanceChartContext } from "@/features/dashboard/components/shared-charts/attendanceChartContext";
 
 interface AttendanceSectionProps {
   filter: AkademikFilter;
@@ -54,14 +56,21 @@ export function AttendanceSection({
 
   return (
     <div>
-      <div className="flex items-baseline gap-2.5 mb-1">
-        <span
-          className="text-[28px] font-extrabold leading-none"
-          style={{ color }}
-        >
-          {isLoading || avgCurr === null ? "—" : `${avgCurr.toFixed(1)}%`}
-        </span>
-        {!isLoading && delta !== null && <TrendBadge trend={delta} />}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-baseline gap-2.5 mb-1">
+          <span
+            className="text-[28px] font-extrabold leading-none"
+            style={{ color }}
+          >
+            {isLoading || avgCurr === null ? "—" : `${avgCurr.toFixed(1)}%`}
+          </span>
+          {!isLoading && delta !== null && <TrendBadge trend={delta} />}
+        </div>
+        {!isLoading && chartData.length > 0 && (
+          <ChartInsightButton
+            chartContext={buildAttendanceChartContext(type, filter, data, chartData)}
+          />
+        )}
       </div>
       <p className="text-[11.5px] text-neutral mb-3.5">{avgLabel}</p>
       {isLoading ? (

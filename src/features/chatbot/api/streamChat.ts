@@ -4,7 +4,7 @@
 // Dipisah dari hook supaya logic parsing stream bisa diuji terpisah dari React,
 // dan supaya useChatStream (hook) tetap fokus ke state management saja.
 
-import type { ChatStreamEvent } from '@/features/chatbot/types';
+import type { ChartContext, ChatStreamEvent } from '@/features/chatbot/types';
 
 // baseURL kosong di dev (di-proxy Vite), atau VITE_API_URL di prod — konsisten
 // dengan src/lib/axios.ts. Tidak pakai axios di sini karena axios tidak
@@ -20,16 +20,21 @@ export interface StreamChatCallbacks {
 /**
  * Kirim 1 pertanyaan ke /api/chat/stream dan proses event SSE-nya.
  *
- * @param query      Teks pertanyaan user
- * @param sessionId  ID percakapan (di-generate frontend via crypto.randomUUID())
- * @param callbacks  Handler untuk tiap jenis event
- * @param signal     AbortSignal untuk cancel dari luar (misal user pindah chat)
+ * @param query        Teks pertanyaan user
+ * @param sessionId    ID percakapan (di-generate frontend via crypto.randomUUID())
+ * @param callbacks    Handler untuk tiap jenis event
+ * @param signal       AbortSignal untuk cancel dari luar (misal user pindah chat)
+ * @param chartContext Opsional -- disertakan saat pesan dipicu dari tombol
+ *                      "Tanya insight" di dashboard (lihat ChartInsightButton).
+ *                      Backend memvalidasinya ketat sebagai Pydantic model,
+ *                      jadi bentuknya harus persis mengikuti tipe ChartContext.
  */
 export async function streamChat(
   query: string,
   sessionId: string,
   callbacks: StreamChatCallbacks,
   signal?: AbortSignal,
+  chartContext?: ChartContext,
 ): Promise<void> {
   let response: Response;
 
@@ -38,7 +43,11 @@ export async function streamChat(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include', // wajib -- auth backend berbasis session cookie
-      body: JSON.stringify({ query, session_id: sessionId }),
+      body: JSON.stringify({
+        query,
+        session_id: sessionId,
+        ...(chartContext && { chart_context: chartContext }),
+      }),
       signal,
     });
   } catch (err) {
@@ -48,7 +57,14 @@ export async function streamChat(
   }
 
   if (!response.ok || !response.body) {
-    callbacks.onError(`Permintaan gagal (status ${response.status}).`);
+    // 422 = chart_context ditolak validasi Pydantic backend (lihat
+    // ChartContext.model_validate di chat_service.py) -- ini murni bug
+    // pemetaan data di kartu dashboard, bukan kesalahan user, jadi pesannya
+    // dibedakan supaya gampang dilacak saat development.
+    const message = response.status === 422
+      ? 'Data grafik yang dikirim tidak valid. Coba lagi, atau ajukan pertanyaan manual.'
+      : `Permintaan gagal (status ${response.status}).`;
+    callbacks.onError(message);
     return;
   }
 
