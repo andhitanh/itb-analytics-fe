@@ -32,7 +32,7 @@ export function ChatSidebar({
       <div className="p-3">
         <Button variant="outline" className="w-full justify-start gap-2" onClick={onNewChat}>
           <Plus className="size-4" />
-          Percakapan baru
+          Percakapan Baru
         </Button>
       </div>
 
