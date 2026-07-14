@@ -21,6 +21,7 @@ import { chartColors, AXIS_STYLE } from '@/styles/chart-token';
 import type { AkademikFilter } from '@/features/dashboard/types';
 import { ChartInsightButton } from '@/features/dashboard/components/shared-charts/ChartInsightButton';
 import { buildScoreHeatmapChartContext } from '@/features/dashboard/components/shared-charts/scoreHeatmapChartContext';
+import { buildGradeTrendChartContext } from '@/features/dashboard/components/shared-charts/gradeTrendChartContext';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -85,8 +86,8 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
       value: v,
     }))
     .filter((item): item is { label: string; value: number } => item.value !== null);
-  const topQItems    = [...allQItems].sort((a, b) => b.value - a.value).slice(0, 5);
-  const bottomQItems = [...allQItems].sort((a, b) => a.value - b.value).slice(0, 5);
+  const topQItems    = [...allQItems].sort((a, b) => b.value - a.value).slice(0, 6);
+  const bottomQItems = [...allQItems].sort((a, b) => a.value - b.value).slice(0, 6);
 
   // Rata-rata skor per fakultas/prodi (filter-aware) — otomatis collapse ke
   // CourseRankingSection lewat EntityAwareChart kalau items.length===1.
@@ -127,14 +128,14 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
               <>
                 <div>
                   <p className="text-[11px] font-bold text-score-high-text uppercase tracking-wide mb-2">
-                    ▲ Skor Tertinggi
+                    ▲ 6 Skor Tertinggi
                   </p>
                   <ProgressRankList items={topQItems} color={chartColors.success} domain={[2.5, 4.0]} mode="top" showRank={topQItems.length > 1} />
                 </div>
                 <div className="h-px bg-border" />
                 <div>
                   <p className="text-[11px] font-bold text-score-low-text uppercase tracking-wide mb-2">
-                    ▼ Skor Terendah
+                    ▼ 6 Skor Terendah
                   </p>
                   <ProgressRankList items={bottomQItems} color={chartColors.danger} domain={[2.5, 4.0]} mode="bottom" showRank={bottomQItems.length > 1} />
                 </div>
@@ -170,8 +171,22 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
       {/* Baris 2a: Temporal trend (full width) */}
       <Card>
         <CardHeader>
-          <CardTitle>Tren Rata-Rata Skor Kuesioner ITB</CardTitle>
-          <CardDescription>Rata-rata keseluruhan 12 pertanyaan lintas semua fakultas</CardDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <CardTitle>Tren Rata-Rata Skor Kuesioner ITB</CardTitle>
+              <CardDescription>Rata-rata keseluruhan 12 pertanyaan lintas semua fakultas</CardDescription>
+            </div>
+            {!trendLoading && temporalChartData.length > 0 && (
+              <ChartInsightButton
+                chartContext={buildGradeTrendChartContext(
+                  filter,
+                  trendData,
+                  'Tren Rata-Rata Skor Kuesioner ITB',
+                  ['overall'],
+                )}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {trendLoading ? (

@@ -105,7 +105,7 @@ export function ScoreHeatmap({ data, isLoading }: ScoreHeatmapProps) {
                           backgroundColor: bg,
                           color: text,
                           fontWeight: isBottom ? 700 : 500,
-                          outline: isBottom ? '2px solid #E74C3C' : 'none',
+                          outline: isBottom ? '2px solid #9B1C1C' : 'none',
                           outlineOffset: -1,
                         }}
                       >
