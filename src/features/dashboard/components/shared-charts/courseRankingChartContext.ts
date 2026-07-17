@@ -30,11 +30,12 @@ function toSeriesRow(item: CourseRankingItem, posisi: 'top' | 'bottom', metric: 
  * memakai kata "mata kuliah", bukan "kelas", supaya konsisten dengan apa
  * yang benar-benar ditampilkan di kartu ini.
  *
- * Catatan implementasi: AkademikFilterBar memakai sentinel string "semua"
- * untuk "tidak difilter" (bukan undefined/null) -- helper ini menyaring
- * sentinel itu supaya filters_applied yang dikirim ke chatbot cuma berisi
- * filter yang benar-benar aktif, sesuai kontrak "objeknya kosong {} kalau
- * tidak ada filter aktif" (01-chart-context-type.md §6).
+ * Catatan implementasi: semester/jenjang/fakultas/programStudi di
+ * AkademikFilterBar adalah multi-select (array kosong = "tidak difilter");
+ * tahunAjaran tetap single-value sentinel "semua". Helper `isSet` di bawah
+ * menyaring keduanya supaya filters_applied yang dikirim ke chatbot cuma
+ * berisi filter yang benar-benar aktif, sesuai kontrak "objeknya kosong {}
+ * kalau tidak ada filter aktif" (01-chart-context-type.md §6).
  */
 export function buildCourseRankingChartContext(
   metric: string,
@@ -47,7 +48,7 @@ export function buildCourseRankingChartContext(
     ...(data?.bottom ?? []).map((item) => toSeriesRow(item, 'bottom', metric)),
   ];
 
-  const isSet = (v: unknown) => v !== undefined && v !== null && v !== 'semua';
+  const isSet = (v: unknown) => Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== 'semua';
 
   return {
     chart_type: 'course_ranking_top_bottom_list',
@@ -55,9 +56,9 @@ export function buildCourseRankingChartContext(
     series,
     filters_applied: {
       ...(isSet(filter.tahunAjaran) && { tahun_ajaran: filter.tahunAjaran }),
-      ...(isSet(filter.semester) && { semester: [Number(filter.semester)] }),
-      ...(isSet(filter.fakultas) && { kode_fakultas: [filter.fakultas] }),
-      ...(isSet(filter.programStudi) && { no_prodi: [Number(filter.programStudi)] }),
+      ...(isSet(filter.semester) && { semester: filter.semester.map(Number) }),
+      ...(isSet(filter.fakultas) && { kode_fakultas: filter.fakultas }),
+      ...(isSet(filter.programStudi) && { no_prodi: filter.programStudi.map(Number) }),
     },
     hint: [
       'Bandingkan mata kuliah top dan bottom untuk metrik ini.',

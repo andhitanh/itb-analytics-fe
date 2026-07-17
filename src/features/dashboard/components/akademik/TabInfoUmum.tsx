@@ -93,7 +93,7 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
   // CourseRankingSection lewat EntityAwareChart kalau items.length===1.
   const { data: overallData, isLoading: overallLoading } = useSkorPertanyaan(filter, 'overall');
   const overallGroupData = toHBarData(overallData);
-  const groupLabel       = filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas';
+  const groupLabel       = filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas';
 
   // Temporal 3-garis (avg keseluruhan, Q1-Q3 capaian, Q4-Q7 pelaksanaan)
   const { data: trendData, isLoading: trendLoading } = useGradeTrend(filter);
@@ -149,11 +149,11 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <CardTitle>
-                  Heatmap Rata-Rata Skor per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} × Pertanyaan
+                  Heatmap Rata-Rata Skor per {filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas'} × Pertanyaan
                 </CardTitle>
                 <CardDescription>
-                  {filter.tahunAjaran !== 'semua' ? filter.tahunAjaran : 'Seluruh tahun ajaran'}
-                  {filter.semester !== 'semua' ? ` · ${filter.semester}` : ''}
+                  {filter.tahunAjaran || 'Memuat tahun ajaran...'}
+                  {filter.semester.length > 0 ? ` · ${filter.semester.join(', ')}` : ''}
                   {' · outline merah = bottom 3 per baris'}
                 </CardDescription>
               </div>

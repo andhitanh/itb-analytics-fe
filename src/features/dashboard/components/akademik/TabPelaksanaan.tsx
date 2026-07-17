@@ -117,7 +117,7 @@ function SubTabRancangan({ filter, onDrill }: { filter: AkademikFilter; onDrill:
           <CardHeader>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <CardTitle>Komposisi Komponen Penilaian per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
+                <CardTitle>Komposisi Komponen Penilaian per {filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas'}</CardTitle>
                 <CardDescription>Rata-rata persentase bobot per jenis komponen</CardDescription>
               </div>
               {!gradingCompLoading && (gradingCompData?.items.length ?? 0) > 0 && (
@@ -144,7 +144,7 @@ function SubTabRancangan({ filter, onDrill }: { filter: AkademikFilter; onDrill:
           <CardContent className="pt-5">
             {q8ChartData.length !== 1 && (
               <p className="text-[12px] font-semibold text-text-dark mb-2">
-                Q8 — Kesesuaian Beban Kerja dengan SKS per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}
+                Q8 — Kesesuaian Beban Kerja dengan SKS per {filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas'}
               </p>
             )}
             {q8Loading ? (
@@ -249,7 +249,7 @@ function SubTabPerformaDosen({ filter, onDrill }: { filter: AkademikFilter; onDr
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Rata-Rata Kehadiran Dosen per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
+            <CardTitle>Rata-Rata Kehadiran Dosen per {filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas'}</CardTitle>
             <CardDescription>Diurutkan dari tertinggi</CardDescription>
           </CardHeader>
           <CardContent>
@@ -363,7 +363,7 @@ function SubTabPerformaMahasiswa({ filter, onDrill }: { filter: AkademikFilter; 
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Rata-Rata Kehadiran Mahasiswa per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
+            <CardTitle>Rata-Rata Kehadiran Mahasiswa per {filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas'}</CardTitle>
             <CardDescription>Diurutkan dari tertinggi</CardDescription>
           </CardHeader>
           <CardContent>

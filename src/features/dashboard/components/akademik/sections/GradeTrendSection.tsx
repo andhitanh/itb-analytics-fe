@@ -35,7 +35,7 @@ interface GradeTrendSectionProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function GradeTrendSection({ filter, ipData, ipLoading, onDrill }: GradeTrendSectionProps) {
-  const groupLabel = filter.fakultas !== "semua" ? "Prodi" : "Fakultas";
+  const groupLabel = filter.fakultas.length > 0 ? "Prodi" : "Fakultas";
 
   const { data, isLoading } = useGradeTrend(filter);
   const trend = data?.trend ?? [];

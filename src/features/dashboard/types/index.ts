@@ -5,22 +5,33 @@ export type JenjangFilter = 'S1' | 'S2' | 'S3' | 'Profesi';
 
 // ─── Akademik filter ──────────────────────────────────────────────────────────
 
-export type SemesterFilter = 'semua' | 'ganjil' | 'genap' | 'pendek';
+/**
+ * Nilai semester mengikuti FilterOption.value dari backend ("1"|"2"|"3" —
+ * ganjil/genap/pendek). Tetap string karena datang dari API, bukan enum tetap.
+ */
+export type SemesterFilter = string;
 
 export interface AkademikFilter {
+  /** Single-select, wajib selalu ada nilai — tidak ada opsi "Semua". */
   tahunAjaran:  string;
-  semester:     SemesterFilter;
+  /** Multi-select. Array kosong = "Semua Semester". */
+  semester:     SemesterFilter[];
+  /** Multi-select. Array kosong = "Semua Jenjang". */
   jenjang:      JenjangFilter[];
-  fakultas:     string;
-  programStudi: string;
+  /** Multi-select. Array kosong = "Semua Fakultas". */
+  fakultas:     string[];
+  /** Multi-select. Array kosong = "Semua Program Studi". */
+  programStudi: string[];
 }
 
 export const DEFAULT_AKADEMIK_FILTER: AkademikFilter = {
-  tahunAjaran:  'semua',
-  semester:     'semua',
+  // Diisi otomatis dari filterOptions.tahun_ajaran[0] saat data pertama tiba
+  // (lihat DashboardAkademik.tsx) — string kosong hanya state transisi awal.
+  tahunAjaran:  '',
+  semester:     [],
   jenjang:      [],
-  fakultas:     'semua',
-  programStudi: 'semua',
+  fakultas:     [],
+  programStudi: [],
 };
 
 // ─── Wisudawan filter ─────────────────────────────────────────────────────────

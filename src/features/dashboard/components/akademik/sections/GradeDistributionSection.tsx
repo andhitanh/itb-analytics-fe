@@ -171,13 +171,13 @@ interface GradeDistributionSectionProps {
 
 export function GradeDistributionSection({ filter, data, isLoading }: GradeDistributionSectionProps) {
   const items = data?.items ?? [];
-  const groupLabel = filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas';
+  const groupLabel = filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas';
 
   return (
     <div className="grid grid-cols-[380px_1fr] gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>Distribusi Nilai Kelulusan {filter.fakultas !== 'semua' ? filter.fakultas : 'ITB'}</CardTitle>
+          <CardTitle>Distribusi Nilai Kelulusan {filter.fakultas.length > 0 ? filter.fakultas.join(', ') : 'ITB'}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (

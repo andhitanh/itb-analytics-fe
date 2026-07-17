@@ -63,7 +63,7 @@ export default function TabLuaran({ filter, onDrill }: TabLuaranProps) {
               <CardTitle>
                 {qGroupItems.length === 1
                   ? 'Rata-Rata Q1-Q3 — Ketercapaian Luaran MK'
-                  : `Peringkat ${filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)`}
+                  : `Peringkat ${filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)`}
               </CardTitle>
               <CardDescription>
                 {qGroupItems.length === 1
@@ -75,7 +75,7 @@ export default function TabLuaran({ filter, onDrill }: TabLuaranProps) {
               <ChartInsightButton
                 chartContext={buildEntityComparisonChartContext(
                   'capaian',
-                  `Peringkat ${filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)`,
+                  `Peringkat ${filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)`,
                   toHBarData(capaianData),
                   filter,
                 )}

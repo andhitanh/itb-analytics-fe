@@ -55,13 +55,13 @@ export function buildGradeDistributionChartContext(
   const granularity = data?.granularity ?? 'fakultas';
   const items = data?.items ?? [];
   const entityLabel = granularity === 'fakultas' ? 'fakultas' : 'program studi';
-  const isSet = (v: unknown) => v !== undefined && v !== null && v !== 'semua';
+  const isSet = (v: unknown) => Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== 'semua';
 
   const filtersApplied = {
     ...(isSet(filter.tahunAjaran) && { tahun_ajaran: filter.tahunAjaran }),
-    ...(isSet(filter.semester) && { semester: [Number(filter.semester)] }),
-    ...(isSet(filter.fakultas) && { kode_fakultas: [filter.fakultas] }),
-    ...(isSet(filter.programStudi) && { no_prodi: [Number(filter.programStudi)] }),
+    ...(isSet(filter.semester) && { semester: filter.semester.map(Number) }),
+    ...(isSet(filter.fakultas) && { kode_fakultas: filter.fakultas }),
+    ...(isSet(filter.programStudi) && { no_prodi: filter.programStudi.map(Number) }),
   };
 
   if (items.length === 1) {

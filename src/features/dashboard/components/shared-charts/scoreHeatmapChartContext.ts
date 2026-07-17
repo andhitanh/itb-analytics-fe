@@ -61,7 +61,7 @@ export function buildScoreHeatmapChartContext(
 ): ChartContext {
   const granularity = data?.granularity ?? 'fakultas';
   const items = data?.items ?? [];
-  const isSet = (v: unknown) => v !== undefined && v !== null && v !== 'semua';
+  const isSet = (v: unknown) => Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== 'semua';
 
   return {
     chart_type: 'score_heatmap_matrix_chart',
@@ -73,9 +73,9 @@ export function buildScoreHeatmapChartContext(
     })),
     filters_applied: {
       ...(isSet(filter.tahunAjaran) && { tahun_ajaran: filter.tahunAjaran }),
-      ...(isSet(filter.semester) && { semester: [Number(filter.semester)] }),
-      ...(isSet(filter.fakultas) && { kode_fakultas: [filter.fakultas] }),
-      ...(isSet(filter.programStudi) && { no_prodi: [Number(filter.programStudi)] }),
+      ...(isSet(filter.semester) && { semester: filter.semester.map(Number) }),
+      ...(isSet(filter.fakultas) && { kode_fakultas: filter.fakultas }),
+      ...(isSet(filter.programStudi) && { no_prodi: filter.programStudi.map(Number) }),
     },
     hint: [
       'Identifikasi pertanyaan (kolom) yang konsisten rendah di banyak entitas.',

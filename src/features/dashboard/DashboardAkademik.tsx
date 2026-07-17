@@ -52,18 +52,19 @@ function FilterSummaryPill({ filter, filterOptions }: FilterSummaryPillProps) {
     return Object.fromEntries(filterOptions.jenjang.map(j => [j.value, j.label]));
   }, [filterOptions]);
 
-  const prodiLabel = useMemo(() => {
-    if (!filterOptions || filter.programStudi === 'semua') return null;
-    const byFak = filterOptions.prodi_by_fakultas[filter.fakultas] ?? [];
-    return byFak.find(p => p.value === filter.programStudi)?.label ?? null;
-  }, [filterOptions, filter.programStudi, filter.fakultas]);
+  const prodiLabels = useMemo(() => {
+    if (!filterOptions || filter.programStudi.length === 0) return [];
+    const allProdi = Object.values(filterOptions.prodi_by_fakultas).flat();
+    return filter.programStudi
+      .map(v => allProdi.find(p => p.value === v)?.label ?? v);
+  }, [filterOptions, filter.programStudi]);
 
   const parts: string[] = [];
-  if (filter.tahunAjaran  !== 'semua') parts.push(filter.tahunAjaran);
-  if (filter.semester     !== 'semua') parts.push(semesterLabel[filter.semester] ?? filter.semester);
+  if (filter.tahunAjaran)              parts.push(filter.tahunAjaran);
+  if (filter.semester.length > 0)      parts.push(filter.semester.map(s => semesterLabel[s] ?? s).join(', '));
   if (filter.jenjang.length > 0)       parts.push(filter.jenjang.map(j => jenjangLabel[j] ?? j).join(', '));
-  if (filter.fakultas     !== 'semua') parts.push(filter.fakultas);
-  if (prodiLabel)                       parts.push(prodiLabel);
+  if (filter.fakultas.length > 0)      parts.push(filter.fakultas.join(', '));
+  if (prodiLabels.length > 0)          parts.push(prodiLabels.join(', '));
 
   if (parts.length === 0) return null;
 
@@ -91,29 +92,30 @@ export default function DashboardAkademik() {
     if (!filterOptions) return;
     const { locked, tahun_ajaran } = filterOptions;
     setFilter({
-      tahunAjaran:  tahun_ajaran[0]?.value ?? 'semua',
-      semester:     'semua',
+      tahunAjaran:  tahun_ajaran[0]?.value ?? '',
+      semester:     [],
       jenjang:      [],
-      fakultas:     locked.fakultas ?? 'semua',
-      programStudi: locked.prodi    ?? 'semua',
+      fakultas:     locked.fakultas ? [locked.fakultas] : [],
+      programStudi: locked.prodi    ? [locked.prodi]    : [],
     });
   }, [filterOptions]);
 
   // Drill-down murni reuse state filter yang sudah ada — bukan state baru.
   // Cuma relevan untuk Direktorat (locked.fakultas null); untuk Dekan/Kaprodi
   // filter.fakultas/programStudi sudah dikunci RLS, breadcrumb tidak muncul
-  // karena locked.fakultas pasti terisi (bukan null) untuk mereka.
-  const isDrilledManually = filterOptions?.locked.fakultas === null && filter.fakultas !== 'semua';
+  // karena locked.fakultas pasti terisi (bukan null) untuk mereka. Drill-down
+  // tetap merepresentasikan 1 fakultas tunggal (array 1 elemen).
+  const isDrilledManually = filterOptions?.locked.fakultas === null && filter.fakultas.length === 1;
   const drilledLabel = isDrilledManually
-    ? filterOptions?.fakultas.find(f => f.value === filter.fakultas)?.label ?? filter.fakultas
+    ? filterOptions?.fakultas.find(f => f.value === filter.fakultas[0])?.label ?? filter.fakultas[0]
     : null;
 
   const handleDrill = (kode: string) => {
-    setFilter({ ...filter, fakultas: kode, programStudi: 'semua' });
+    setFilter({ ...filter, fakultas: [kode], programStudi: [] });
   };
 
   const handleDrillUp = () => {
-    setFilter({ ...filter, fakultas: 'semua', programStudi: 'semua' });
+    setFilter({ ...filter, fakultas: [], programStudi: [] });
   };
 
   return (

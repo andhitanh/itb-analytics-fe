@@ -29,8 +29,8 @@ export function buildEntityComparisonChartContext(
   items: GroupDataItem[],
   filter: AkademikFilter,
 ): ChartContext {
-  const granularity: 'fakultas' | 'prodi' = filter.fakultas !== 'semua' ? 'prodi' : 'fakultas';
-  const isSet = (v: unknown) => v !== undefined && v !== null && v !== 'semua';
+  const granularity: 'fakultas' | 'prodi' = filter.fakultas.length > 0 ? 'prodi' : 'fakultas';
+  const isSet = (v: unknown) => Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== 'semua';
 
   const toRow = (item: GroupDataItem) => {
     const base = { ...entityFields(item, granularity), delta_periode_lalu: item.delta ?? null };
@@ -48,9 +48,9 @@ export function buildEntityComparisonChartContext(
     series: items.map(toRow),
     filters_applied: {
       ...(isSet(filter.tahunAjaran) && { tahun_ajaran: filter.tahunAjaran }),
-      ...(isSet(filter.semester) && { semester: [Number(filter.semester)] }),
-      ...(isSet(filter.fakultas) && { kode_fakultas: [filter.fakultas] }),
-      ...(isSet(filter.programStudi) && { no_prodi: [Number(filter.programStudi)] }),
+      ...(isSet(filter.semester) && { semester: filter.semester.map(Number) }),
+      ...(isSet(filter.fakultas) && { kode_fakultas: filter.fakultas }),
+      ...(isSet(filter.programStudi) && { no_prodi: filter.programStudi.map(Number) }),
     },
     hint: [
       `Identifikasi ${entityLabel} dengan nilai tertinggi dan terendah pada metrik ini.`,

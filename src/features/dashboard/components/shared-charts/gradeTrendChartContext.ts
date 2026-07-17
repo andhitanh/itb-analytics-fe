@@ -41,7 +41,7 @@ export function buildGradeTrendChartContext(
   metrics: TrendMetric[] = ['overall'],
 ): ChartContext {
   const trend = data?.trend ?? [];
-  const isSet = (v: unknown) => v !== undefined && v !== null && v !== 'semua';
+  const isSet = (v: unknown) => Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== 'semua';
 
   return {
     chart_type: 'score_trend_line_chart',
@@ -55,8 +55,8 @@ export function buildGradeTrendChartContext(
       ...Object.fromEntries(metrics.map((m) => [FIELD_BY_METRIC[m], p[FIELD_BY_METRIC[m]]])),
     })),
     filters_applied: {
-      ...(isSet(filter.fakultas) && { kode_fakultas: [filter.fakultas] }),
-      ...(isSet(filter.programStudi) && { no_prodi: [Number(filter.programStudi)] }),
+      ...(isSet(filter.fakultas) && { kode_fakultas: filter.fakultas }),
+      ...(isSet(filter.programStudi) && { no_prodi: filter.programStudi.map(Number) }),
     },
     hint: [
       'Identifikasi arah tren (naik/turun) sepanjang periode yang tersedia.',

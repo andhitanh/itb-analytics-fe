@@ -114,7 +114,25 @@ export function HBarChart({
           radius={[0, 4, 4, 0]}
           maxBarSize={18}
           isAnimationActive={false}
-          onClick={onBarClick ? (d: any) => onBarClick((d.payload as HBarChartDataItem).kode) : undefined}
+          onClick={
+            onBarClick
+              ? (d: any) => {
+                  // Recharts v3 mengubah bentuk argumen onClick dibanding v2 --
+                  // tidak selalu `d.payload` seperti dulu, kadang datanya
+                  // langsung di `d` atau di `d.payload.payload` (tergantung
+                  // versi & tipe elemen grafik). Coba beberapa kemungkinan
+                  // sebelum menyerah, supaya klik tetap berfungsi walau
+                  // Recharts mengubah bentuk internalnya lagi di update berikutnya.
+                  const item: HBarChartDataItem | undefined =
+                    d?.payload?.payload ?? d?.payload ?? d;
+                  if (!item?.kode) {
+                    console.warn('HBarChart: kode tidak ditemukan di data klik bar.', d);
+                    return;
+                  }
+                  onBarClick(item.kode);
+                }
+              : undefined
+          }
           style={onBarClick ? { cursor: 'pointer' } : undefined}
           label={{
             position:  'right',

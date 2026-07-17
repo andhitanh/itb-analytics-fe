@@ -4,19 +4,17 @@ import { Filter, X, Lock } from 'lucide-react';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Button }    from '@/components/ui/button';
 import { Badge }     from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import {
+  Tooltip, TooltipContent, TooltipTrigger, TooltipProvider,
+} from '@/components/ui/tooltip';
+import { MultiSelectDropdown } from './MultiSelectDropdown';
 import {
   type AkademikFilter,
-  type SemesterFilter,
   type JenjangFilter,
   DEFAULT_AKADEMIK_FILTER,
 } from '@/features/dashboard/types';
-import {
-  Tooltip, TooltipContent, TooltipTrigger, TooltipProvider
-} from '@/components/ui/tooltip';
 import type { AkademikFilterOptionsResponse } from '@/features/dashboard/api/akademik';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -34,7 +32,7 @@ function LockedLabel({ label, reason }: { label: string; reason: string }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-1 h-7 px-2.5 text-[12px] rounded-md border border-border-mid bg-active text-primary font-semibold cursor-help">
+          <div className="flex items-center gap-1 h-8 px-2.5 text-[12px] rounded-md border border-border-mid bg-active text-primary font-semibold cursor-help min-w-[150px]">
             <Lock className="h-3 w-3 shrink-0" />
             {label}
           </div>
@@ -46,13 +44,6 @@ function LockedLabel({ label, reason }: { label: string; reason: string }) {
     </TooltipProvider>
   );
 }
-
-const PILL_CLASS =
-  'h-7 px-2.5 text-[12px] rounded-md border border-border-mid bg-surface ' +
-  'text-text-mid font-normal ' +
-  'data-[state=on]:bg-primary data-[state=on]:text-white data-[state=on]:border-primary ' +
-  'data-[state=on]:font-semibold hover:bg-active transition-colors duration-150 ' +
-  'disabled:opacity-50 disabled:cursor-not-allowed';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -68,12 +59,16 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
   const isLoading = filterOptions === null;
   const locked    = filterOptions?.locked ?? { fakultas: null, prodi: null };
 
-  // Prodi yang tampil: filter by fakultas aktif, lalu filter by jenjang aktif jika ada
+  // Prodi yang tampil: union prodi dari seluruh fakultas terpilih (atau semua
+  // fakultas kalau belum ada yang dipilih), lalu disaring oleh jenjang aktif.
   const prodiOptions = useMemo(() => {
-    if (!filterOptions || filter.fakultas === 'semua') return [];
-    const byFak = filterOptions.prodi_by_fakultas[filter.fakultas] ?? [];
-    if (filter.jenjang.length === 0) return byFak;
-    return byFak.filter(p => filter.jenjang.includes(p.kd_strata as JenjangFilter));
+    if (!filterOptions) return [];
+    const fakultasKeys = filter.fakultas.length > 0
+      ? filter.fakultas
+      : Object.keys(filterOptions.prodi_by_fakultas);
+    const merged = fakultasKeys.flatMap(fk => filterOptions.prodi_by_fakultas[fk] ?? []);
+    if (filter.jenjang.length === 0) return merged;
+    return merged.filter(p => filter.jenjang.includes(p.kd_strata as JenjangFilter));
   }, [filterOptions, filter.fakultas, filter.jenjang]);
 
   // Label untuk prodi yang terkunci (tampilkan nama, bukan no_ps)
@@ -94,183 +89,129 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
   }, [locked.fakultas, filterOptions]);
 
   const activeCount = [
-    filter.tahunAjaran  !== 'semua',
-    filter.semester     !== 'semua',
-    filter.jenjang.length > 0,
-    filter.fakultas     !== 'semua',
-    filter.programStudi !== 'semua',
+    filter.semester.length     > 0,
+    filter.jenjang.length      > 0,
+    filter.fakultas.length     > 0,
+    filter.programStudi.length > 0,
   ].filter(Boolean).length;
 
   if (isLoading) {
     return (
-      <div className="bg-surface rounded-xl border border-border px-4 py-3 flex items-center gap-2.5 h-[52px] animate-pulse">
-        <div className="h-3.5 w-3.5 rounded bg-border-mid" />
-        <div className="h-4 w-12 rounded bg-border-mid" />
-        <div className="h-5 w-px bg-border-mid" />
-        <div className="h-7 w-[130px] rounded-md bg-border-mid" />
-        <div className="h-5 w-px bg-border-mid" />
-        <div className="h-7 w-[200px] rounded-md bg-border-mid" />
-        <div className="h-5 w-px bg-border-mid" />
-        <div className="h-7 w-[160px] rounded-md bg-border-mid" />
+      <div className="bg-surface rounded-xl border border-border px-4 py-3 flex flex-col gap-3 animate-pulse">
+        <div className="h-7 w-[220px] rounded-md bg-border-mid" />
+        <div className="grid grid-cols-4 gap-2.5">
+          <div className="h-8 rounded-md bg-border-mid" />
+          <div className="h-8 rounded-md bg-border-mid" />
+          <div className="h-8 rounded-md bg-border-mid" />
+          <div className="h-8 rounded-md bg-border-mid" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-surface rounded-xl border border-border px-4 py-3 flex items-center gap-2.5 flex-wrap">
+    <div className="bg-surface rounded-xl border border-border px-4 py-3.5 flex flex-col gap-3">
 
-      <div className="flex items-center gap-1.5 shrink-0">
-        <Filter className="h-3.5 w-3.5 text-primary shrink-0" />
-        <FilterLabel>Filter</FilterLabel>
-      </div>
+      {/* Baris 1: Tahun Ajaran — single-select, wajib, terpisah secara visual */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Filter className="h-3.5 w-3.5 text-primary shrink-0" />
+            <FilterLabel>Filter</FilterLabel>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <FilterLabel>Tahun Ajaran</FilterLabel>
+            <Select
+              value={filter.tahunAjaran}
+              onValueChange={v => onChange({ ...filter, tahunAjaran: v, programStudi: [] })}
+            >
+              <SelectTrigger className="h-8 text-[12px] border-border-mid min-w-[140px]">
+                <SelectValue placeholder="Memuat..." />
+              </SelectTrigger>
+              <SelectContent>
+                {filterOptions.tahun_ajaran.map(o => (
+                  <SelectItem key={o.value} value={o.value} className="text-[12px]">
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-      <Separator orientation="vertical" className="h-5 shrink-0" />
-
-      {/* Tahun ajaran */}
-      <div className="flex items-center gap-1.5">
-        <FilterLabel>Tahun</FilterLabel>
-        <Select
-          value={filter.tahunAjaran}
-          onValueChange={v => onChange({ ...filter, tahunAjaran: v, programStudi: 'semua' })}
-        >
-          <SelectTrigger className="h-7 text-[12px] border-border-mid min-w-[130px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="semua" className="text-[12px]">Semua Tahun</SelectItem>
-            {filterOptions.tahun_ajaran.map(o => (
-              <SelectItem key={o.value} value={o.value} className="text-[12px]">
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Separator orientation="vertical" className="h-5 shrink-0" />
-
-      {/* Semester */}
-      <div className="flex items-center gap-1.5">
-        <FilterLabel>Semester</FilterLabel>
-        <ToggleGroup
-          type="single"
-          value={filter.semester}
-          onValueChange={v => v && onChange({ ...filter, semester: v as SemesterFilter })}
-          className="gap-1"
-        >
-          <ToggleGroupItem value="semua" className={PILL_CLASS}>Semua</ToggleGroupItem>
-          {filterOptions.semester.map(s => (
-            <ToggleGroupItem key={s.value} value={s.value} className={PILL_CLASS}>
-              {s.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </div>
-
-      <Separator orientation="vertical" className="h-5 shrink-0" />
-
-      {/* Jenjang */}
-      <div className="flex items-center gap-1.5">
-        <FilterLabel>Jenjang</FilterLabel>
-        <ToggleGroup
-          type="multiple"
-          value={filter.jenjang}
-          onValueChange={v => onChange({ ...filter, jenjang: v as JenjangFilter[], programStudi: 'semua' })}
-          className="gap-1"
-        >
-          {filterOptions.jenjang.map(j => (
-            <ToggleGroupItem key={j.value} value={j.value} className={PILL_CLASS}>
-              {j.label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </div>
-
-      <Separator orientation="vertical" className="h-5 shrink-0" />
-
-      {/* Fakultas — locked jika role dekan/kaprodi */}
-      <div className="flex items-center gap-1.5">
-        <FilterLabel>Fakultas</FilterLabel>
-        {locked.fakultas ? (
-          <LockedLabel
-            label={lockedFakLabel ?? locked.fakultas}
-            reason="Tampilan Anda dikunci ke fakultas ini sesuai wewenang akun Anda."
-          />
-        ) : (
-          <Select
-            value={filter.fakultas}
-            onValueChange={v => onChange({ ...filter, fakultas: v, programStudi: 'semua' })}
-          >
-            <SelectTrigger className="h-7 text-[12px] border-border-mid min-w-[130px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="semua" className="text-[12px]">Semua Fakultas</SelectItem>
-              {filterOptions.fakultas.map(o => (
-                <SelectItem key={o.value} value={o.value} className="text-[12px]">
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {activeCount > 0 && (
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge
+              variant="secondary"
+              className="bg-active text-primary border-0 gap-1.5 px-2.5 py-1 rounded-full"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+              {activeCount} filter aktif
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange({ ...DEFAULT_AKADEMIK_FILTER, tahunAjaran: filter.tahunAjaran })}
+              className="h-7 px-2.5 text-[12px] text-danger hover:text-danger hover:bg-[#FEF2F2] gap-1"
+            >
+              <X className="h-3 w-3" />
+              Reset
+            </Button>
+          </div>
         )}
       </div>
 
-      {/* Program Studi — muncul jika fakultas dipilih */}
-      {filter.fakultas !== 'semua' && (
-        <>
-          <Separator orientation="vertical" className="h-5 shrink-0" />
+      <div className="h-px bg-border" />
+
+      {/* Baris 2: Semester, Jenjang, Fakultas, Program Studi — multi-select, sejajar */}
+      <div className="grid grid-cols-4 gap-2.5">
+
+        <MultiSelectDropdown
+          label="Semester"
+          options={filterOptions.semester}
+          selected={filter.semester}
+          onChange={v => onChange({ ...filter, semester: v })}
+        />
+
+        <MultiSelectDropdown
+          label="Jenjang"
+          options={filterOptions.jenjang}
+          selected={filter.jenjang}
+          onChange={v => onChange({ ...filter, jenjang: v as JenjangFilter[], programStudi: [] })}
+        />
+
+        {locked.fakultas ? (
           <div className="flex items-center gap-1.5">
-            <FilterLabel>Prodi</FilterLabel>
-            {locked.prodi ? (
-              <LockedLabel
-                label={lockedProdiLabel ?? locked.prodi}
-                reason="Tampilan Anda dikunci ke program studi ini sesuai wewenang akun Anda."
-              />
-            ) : (
-              <Select
-                value={filter.programStudi}
-                onValueChange={v => onChange({ ...filter, programStudi: v })}
-              >
-                <SelectTrigger className="h-7 text-[12px] border-border-mid min-w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="semua" className="text-[12px]">Semua Program Studi</SelectItem>
-                  {prodiOptions.map(o => (
-                    <SelectItem key={o.value} value={o.value} className="text-[12px]">
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            <LockedLabel
+              label={lockedFakLabel ?? locked.fakultas}
+              reason="Tampilan Anda dikunci ke fakultas ini sesuai wewenang akun Anda."
+            />
           </div>
-        </>
-      )}
+        ) : (
+          <MultiSelectDropdown
+            label="Fakultas"
+            options={filterOptions.fakultas}
+            selected={filter.fakultas}
+            onChange={v => onChange({ ...filter, fakultas: v, programStudi: [] })}
+          />
+        )}
 
-      <div className="flex-1" />
-
-      {activeCount > 0 && (
-        <div className="flex items-center gap-2 shrink-0">
-          <Badge
-            variant="secondary"
-            className="bg-active text-primary border-0 gap-1.5 px-2.5 py-1 rounded-full"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-            {activeCount} filter aktif
-          </Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onChange(DEFAULT_AKADEMIK_FILTER)}
-            className="h-7 px-2.5 text-[12px] text-danger hover:text-danger hover:bg-[#FEF2F2] gap-1"
-          >
-            <X className="h-3 w-3" />
-            Reset
-          </Button>
-        </div>
-      )}
+        {locked.prodi ? (
+          <div className="flex items-center gap-1.5">
+            <LockedLabel
+              label={lockedProdiLabel ?? locked.prodi}
+              reason="Tampilan Anda dikunci ke program studi ini sesuai wewenang akun Anda."
+            />
+          </div>
+        ) : (
+          <MultiSelectDropdown
+            label="Program Studi"
+            options={prodiOptions}
+            selected={filter.programStudi}
+            onChange={v => onChange({ ...filter, programStudi: v })}
+          />
+        )}
+      </div>
     </div>
   );
 }
