@@ -24,6 +24,7 @@ import type { AkademikFilter } from '@/features/dashboard/types';
 import { ChartInsightButton } from '@/features/dashboard/components/shared-charts/ChartInsightButton';
 import { buildGradingCompChartContext } from '@/features/dashboard/components/shared-charts/gradingCompChartContext';
 import { buildSkorBySksChartContext } from '@/features/dashboard/components/shared-charts/skorBySksChartContext';
+import { buildEntityComparisonChartContext } from '@/features/dashboard/components/shared-charts/entityComparisonChartContext';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -232,13 +233,16 @@ const DOSEN_KODE_GRUP = ['q24', 'q25', 'q26', 'q27'] as const;
 function SubTabPerformaDosen({ filter, onDrill }: { filter: AkademikFilter; onDrill: (kode: string) => void }) {
   const { data, isLoading } = useSkorPertanyaanGroup(filter, DOSEN_KODE_GRUP);
   const [q4Data, q5Data, q6Data, q7Data] = data ?? [null, null, null, null];
-  const q4q7Items = averageAcrossGroups(data ?? [])
-    .sort((a, b) => b.value - a.value)
-    .map(({ label, value, delta }) => ({
-      label,
-      value,
-      badge: <TrendBadge trend={delta ?? 0} />,
-    }));
+  const q4q7Raw = averageAcrossGroups(data ?? []).sort((a, b) => b.value - a.value);
+  const q4q7Items = q4q7Raw.map(({ label, value, delta }) => ({
+    label,
+    value,
+    badge: <TrendBadge trend={delta ?? 0} />,
+  }));
+  // Bentuk terpisah untuk chart_context (butuh kode+avg, bukan value+badge
+  // yang dipakai ProgressRankList) -- averageAcrossGroups sudah mengembalikan
+  // kode, cuma dibuang di q4q7Items karena tidak dipakai untuk tampilan.
+  const q4q7GroupData = q4q7Raw.map(({ label, kode, value, delta }) => ({ label, kode, avg: value, delta }));
 
   return (
     <div className="flex flex-col gap-4">
@@ -260,12 +264,21 @@ function SubTabPerformaDosen({ filter, onDrill }: { filter: AkademikFilter; onDr
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              {q4q7Items.length === 1 ? 'Rata-Rata Q4-Q7 — Performa Dosen' : 'Peringkat — Rata-Rata Q4–Q7 (Performa Dosen)'}
-            </CardTitle>
-            <CardDescription>
-              {q4q7Items.length === 1 ? 'Top/bottom mata kuliah berdasarkan skor ini' : 'Q4: Terorganisir · Q5: Komunikasi · Q6: Peduli · Q7: Adil'}
-            </CardDescription>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle>
+                  {q4q7Items.length === 1 ? 'Rata-Rata Q4-Q7 — Performa Dosen' : 'Peringkat — Rata-Rata Q4–Q7 (Performa Dosen)'}
+                </CardTitle>
+                <CardDescription>
+                  {q4q7Items.length === 1 ? 'Top/bottom mata kuliah berdasarkan skor ini' : 'Q4: Terorganisir · Q5: Komunikasi · Q6: Peduli · Q7: Adil'}
+                </CardDescription>
+              </div>
+              {q4q7Items.length > 1 && !isLoading && (
+                <ChartInsightButton
+                  chartContext={buildEntityComparisonChartContext('q4_q7', 'Peringkat — Rata-Rata Q4–Q7 (Performa Dosen)', q4q7GroupData, filter)}
+                />
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {q4q7Items.length === 1 ? (
@@ -365,12 +378,21 @@ function SubTabPerformaMahasiswa({ filter, onDrill }: { filter: AkademikFilter; 
 
         <Card>
           <CardHeader>
-            <CardTitle>
-             {q11q12Items.length === 1 ? 'Rata-Rata Q11-Q12 — Performa Mahasiswa' : 'Peringkat — Rata-Rata Q11–Q12 (Performa Mahasiswa)'}
-            </CardTitle>
-            <CardDescription>
-              {q11q12Items.length === 1 ? 'Top/bottom mata kuliah berdasarkan skor ini' : 'Q11: Mahasiswa berusaha sungguh-sungguh · Q12: Pengalaman positif'}
-            </CardDescription>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle>
+                 {q11q12Items.length === 1 ? 'Rata-Rata Q11-Q12 — Performa Mahasiswa' : 'Peringkat — Rata-Rata Q11–Q12 (Performa Mahasiswa)'}
+                </CardTitle>
+                <CardDescription>
+                  {q11q12Items.length === 1 ? 'Top/bottom mata kuliah berdasarkan skor ini' : 'Q11: Mahasiswa berusaha sungguh-sungguh · Q12: Pengalaman positif'}
+                </CardDescription>
+              </div>
+              {q11q12Items.length > 1 && !isLoading && (
+                <ChartInsightButton
+                  chartContext={buildEntityComparisonChartContext('perilaku_mahasiswa', 'Peringkat — Rata-Rata Q11–Q12 (Performa Mahasiswa)', toHBarData(perilakuData), filter)}
+                />
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {q11q12Items.length === 1 ? (
@@ -435,12 +457,21 @@ function SubTabSarana({ filter, onDrill }: { filter: AkademikFilter; onDrill: (k
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>
-            {q9q10Items.length === 1 ? 'Rata-Rata Q9-Q10 — Sarana Prasarana' : 'Peringkat — Rata-Rata Q9–Q10 (Sarana Prasarana)'}
-          </CardTitle>
-          <CardDescription>
-            {q9q10Items.length === 1 ? 'Top/bottom mata kuliah berdasarkan skor ini' : 'Q9: Sarana prasarana memadai · Q10: Fasilitas pendukung di luar kuliah'}
-          </CardDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <CardTitle>
+                {q9q10Items.length === 1 ? 'Rata-Rata Q9-Q10 — Sarana Prasarana' : 'Peringkat — Rata-Rata Q9–Q10 (Sarana Prasarana)'}
+              </CardTitle>
+              <CardDescription>
+                {q9q10Items.length === 1 ? 'Top/bottom mata kuliah berdasarkan skor ini' : 'Q9: Sarana prasarana memadai · Q10: Fasilitas pendukung di luar kuliah'}
+              </CardDescription>
+            </div>
+            {q9q10Items.length > 1 && !isLoading && (
+              <ChartInsightButton
+                chartContext={buildEntityComparisonChartContext('sarana_prasarana', 'Peringkat — Rata-Rata Q9–Q10 (Sarana Prasarana)', toHBarData(saranaData), filter)}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {q9q10Items.length === 1 ? (

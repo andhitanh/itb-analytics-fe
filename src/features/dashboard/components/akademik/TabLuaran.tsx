@@ -11,6 +11,8 @@ import { toHBarData }        from '@/features/dashboard/utils/skorPertanyaan';
 import { toIpHBarData }      from '@/features/dashboard/utils/gradeDistribution';
 import { chartColors }          from '@/styles/chart-token';
 import type { AkademikFilter }  from '@/features/dashboard/types';
+import { ChartInsightButton } from '@/features/dashboard/components/shared-charts/ChartInsightButton';
+import { buildEntityComparisonChartContext } from '@/features/dashboard/components/shared-charts/entityComparisonChartContext';
 
 interface TabLuaranProps {
   filter:  AkademikFilter;
@@ -56,16 +58,30 @@ export default function TabLuaran({ filter, onDrill }: TabLuaranProps) {
       {/* Q1-Q3 Peringkat Fakultas/Prodi — collapse otomatis ke course-ranking */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            {qGroupItems.length === 1
-              ? 'Rata-Rata Q1-Q3 — Ketercapaian Luaran MK'
-              : `Peringkat ${filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)`}
-          </CardTitle>
-          <CardDescription>
-            {qGroupItems.length === 1
-              ? 'Top/bottom mata kuliah berdasarkan skor ini'
-              : 'Q1: Informasi luaran · Q2: Perkuliahan diarahkan ke luaran · Q3: Mahasiswa mencapai luaran'}
-          </CardDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <CardTitle>
+                {qGroupItems.length === 1
+                  ? 'Rata-Rata Q1-Q3 — Ketercapaian Luaran MK'
+                  : `Peringkat ${filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)`}
+              </CardTitle>
+              <CardDescription>
+                {qGroupItems.length === 1
+                  ? 'Top/bottom mata kuliah berdasarkan skor ini'
+                  : 'Q1: Informasi luaran · Q2: Perkuliahan diarahkan ke luaran · Q3: Mahasiswa mencapai luaran'}
+              </CardDescription>
+            </div>
+            {qGroupItems.length > 1 && !isLoading && (
+              <ChartInsightButton
+                chartContext={buildEntityComparisonChartContext(
+                  'capaian',
+                  `Peringkat ${filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'} — Rata-Rata Q1–Q3 (Ketercapaian Luaran MK)`,
+                  toHBarData(capaianData),
+                  filter,
+                )}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {qGroupItems.length === 1 ? (
