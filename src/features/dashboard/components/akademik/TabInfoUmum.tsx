@@ -113,7 +113,7 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
         <Card>
           <CardHeader>
             <CardTitle>Peringkat Pertanyaan Kuesioner</CardTitle>
-            <CardDescription>Rata-rata skor 12 pertanyaan — sesuai filter aktif</CardDescription>
+            <CardDescription>Rata-rata skor 12 pertanyaan</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3.5">
             {heatmapLoading ? (
@@ -218,7 +218,7 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
       <Card>
         <CardHeader>
           <CardTitle>Rata-Rata Skor per {groupLabel}</CardTitle>
-          <CardDescription>Diurutkan tertinggi — sesuai filter aktif</CardDescription>
+          <CardDescription>Diurutkan tertinggi</CardDescription>
         </CardHeader>
         <CardContent>
           {overallLoading ? (
@@ -247,7 +247,7 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
           <CardDescription>
             {overallGroupData.length === 1
               ? 'Top/bottom mata kuliah berdasarkan rata-rata skor kuesioner'
-              : 'Diurutkan tertinggi — sesuai filter aktif'}
+              : 'Diurutkan tertinggi'}
           </CardDescription>
         </CardHeader>
         <CardContent>

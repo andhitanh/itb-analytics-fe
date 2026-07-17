@@ -178,7 +178,6 @@ export function GradeDistributionSection({ filter, data, isLoading }: GradeDistr
       <Card>
         <CardHeader>
           <CardTitle>Distribusi Nilai Kelulusan {filter.fakultas !== 'semua' ? filter.fakultas : 'ITB'}</CardTitle>
-          <CardDescription>Akumulasi sesuai filter aktif</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -200,7 +199,7 @@ export function GradeDistributionSection({ filter, data, isLoading }: GradeDistr
           <div className="flex items-start justify-between gap-2">
             <div>
               <CardTitle>Distribusi Grade per {groupLabel}</CardTitle>
-              <CardDescription>Diurutkan sesuai respons backend — sesuai filter aktif</CardDescription>
+              <CardDescription>Diurutkan sesuai respons backend</CardDescription>
             </div>
             {!isLoading && items.length > 0 && (
               <ChartInsightButton chartContext={buildGradeDistributionChartContext(filter, data)} />

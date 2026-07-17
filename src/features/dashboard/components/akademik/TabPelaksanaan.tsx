@@ -118,7 +118,7 @@ function SubTabRancangan({ filter, onDrill }: { filter: AkademikFilter; onDrill:
             <div className="flex items-start justify-between gap-2">
               <div>
                 <CardTitle>Komposisi Komponen Penilaian per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
-                <CardDescription>Rata-rata persentase bobot per jenis komponen — sesuai filter aktif</CardDescription>
+                <CardDescription>Rata-rata persentase bobot per jenis komponen</CardDescription>
               </div>
               {!gradingCompLoading && (gradingCompData?.items.length ?? 0) > 0 && (
                 <ChartInsightButton
@@ -250,7 +250,7 @@ function SubTabPerformaDosen({ filter, onDrill }: { filter: AkademikFilter; onDr
         <Card>
           <CardHeader>
             <CardTitle>Rata-Rata Kehadiran Dosen per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
-            <CardDescription>Diurutkan dari tertinggi — sesuai filter aktif</CardDescription>
+            <CardDescription>Diurutkan dari tertinggi</CardDescription>
           </CardHeader>
           <CardContent>
             <AttendanceSection
@@ -364,7 +364,7 @@ function SubTabPerformaMahasiswa({ filter, onDrill }: { filter: AkademikFilter; 
         <Card>
           <CardHeader>
             <CardTitle>Rata-Rata Kehadiran Mahasiswa per {filter.fakultas !== 'semua' ? 'Prodi' : 'Fakultas'}</CardTitle>
-            <CardDescription>Diurutkan dari tertinggi — sesuai filter aktif</CardDescription>
+            <CardDescription>Diurutkan dari tertinggi</CardDescription>
           </CardHeader>
           <CardContent>
             <AttendanceSection

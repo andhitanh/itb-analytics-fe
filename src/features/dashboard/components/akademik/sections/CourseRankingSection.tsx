@@ -103,7 +103,7 @@ export function CourseRankingSection({
             <CardDescription>
               {hasOverlap
                 ? `Prodi ini hanya punya ${totalMatkul} mata kuliah aktif — seluruhnya ditampilkan`
-                : 'Berdasarkan rata-rata skor kuesioner — sesuai filter aktif'}
+                : 'Berdasarkan rata-rata skor kuesioner'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -128,7 +128,7 @@ export function CourseRankingSection({
         <Card>
           <CardHeader>
             <CardTitle>Top {data?.limit ?? limit} {title}</CardTitle>
-            <CardDescription>Berdasarkan rata-rata skor kuesioner — sesuai filter aktif</CardDescription>
+            <CardDescription>Berdasarkan rata-rata skor kuesioner</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (

@@ -13,21 +13,21 @@ export default function TabKomentar({ filter }: TabKomentarProps) {
         filter={filter}
         sumber="itb"
         title="Usulan Perbaikan untuk ITB"
-        subtitle="Rekomendasi dosen ke ITB dari portofolio dosen — sesuai filter aktif"
+        subtitle="Rekomendasi dosen ke ITB dari portofolio dosen"
         color={chartColors.primary}
       />
       <RawCommentList
         filter={filter}
         sumber="dosen"
         title="Refleksi Dosen"
-        subtitle="Usulan perbaikan dari portofolio dosen — sesuai filter aktif"
+        subtitle="Usulan perbaikan dari portofolio dosen"
         color={chartColors.warning}
       />
       <RawCommentList
         filter={filter}
         sumber="mahasiswa"
         title="Komentar Mahasiswa"
-        subtitle="Komentar bebas dari kuesioner evaluasi mahasiswa — sesuai filter aktif"
+        subtitle="Komentar bebas dari kuesioner evaluasi mahasiswa"
         color={chartColors.mid}
       />
     </div>
