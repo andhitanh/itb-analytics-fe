@@ -206,8 +206,8 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
                 <Tooltip content={<RechartsTooltip />} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                 <Line dataKey="avg"  name="Rata-rata umum" stroke={chartColors.primary} strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls />
-                <Line dataKey="q1q3" name="Q1-Q3 (Luaran)" stroke={chartColors.mid}     strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
-                <Line dataKey="q4q7" name="Q4-Q7 (Dosen)"  stroke={chartColors.light}   strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
+                {/* <Line dataKey="q1q3" name="Q1-Q3 (Luaran)" stroke={chartColors.mid}     strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls />
+                <Line dataKey="q4q7" name="Q4-Q7 (Dosen)"  stroke={chartColors.light}   strokeWidth={1.5} dot={false} strokeDasharray="5 3" connectNulls /> */}
               </LineChart>
             </ResponsiveContainer>
           )}
