@@ -19,6 +19,15 @@ export interface RoleEntry {
   noPs:       number | null;
   kdFak:      string | null;
   isPrime:    boolean;
+  /**
+   * Label entitas siap-tampil untuk profil header, sudah dihitung backend
+   * (nama fakultas untuk dekan/jajaran dekanat, nama prodi untuk
+   * kaprodi/jajaran prodi, nama kk untuk dosen, atau label institut untuk
+   * admin/direktorat). null hanya terjadi kalau backend gagal resolve
+   * (harusnya tidak pernah, tapi tetap ditangani lewat fallback di
+   * getRoleScopeLabel).
+   */
+  scopeLabel: string | null;
 }
 
 // ─── User Info ────────────────────────────────────────────────────────────────
@@ -55,41 +64,22 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   dosen:           1,
 };
 
-// ─── Scope Lookup Tables ──────────────────────────────────────────────────────
-
-export const FAKULTAS_NAMES: Record<string, string> = {
-  STEI:  'Sekolah Teknik Elektro dan Informatika',
-  FTI:   'Fakultas Teknologi Industri',
-  FITB:  'Fakultas Ilmu dan Teknologi Kebumian',
-  FMIPA: 'Fakultas Matematika dan Ilmu Pengetahuan Alam',
-  FTMD:  'Fakultas Teknik Mesin dan Dirgantara',
-  FTSL:  'Fakultas Teknik Sipil dan Lingkungan',
-  FTTM:  'Fakultas Teknik Pertambangan dan Perminyakan',
-  SAPPK: 'Sekolah Arsitektur, Perencanaan dan Pengembangan Kebijakan',
-  SF:    'Sekolah Farmasi',
-  SBM:   'Sekolah Bisnis dan Manajemen',
-  FSRD:  'Fakultas Seni Rupa dan Desain',
-  SITH:  'Sekolah Ilmu dan Teknologi Hayati',
-  SPS:   'Sekolah Pascasarjana',
-};
-
-// Small mock subset — in production these come from API
-export const PRODI_NAMES: Record<number, string> = {
-  161: 'Teknik Informatika',
-  198: 'Teknik Elektro',
-  932: 'Teknik Kimia',
-  935: 'Teknik Industri',
-  207: 'Teknik Sipil',
-  271: 'Manajemen Rekayasa Industri',
-};
+const INSTITUT_LABEL = 'Institut Teknologi Bandung';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
-/** Scope label for a single role entry, shown as sub-text in the role dropdown. */
+/**
+ * Scope label for a single role entry, shown as sub-text in the role dropdown
+ * and in the profile header.
+ *
+ * Sumber utama adalah `scopeLabel` yang sudah dihitung backend (lihat
+ * auth/role_mapper.py::_compute_scope_label) — backend yang query nama
+ * fakultas/prodi/kk sebenarnya dari DB, bukan lookup table statis di sini.
+ * Fallback ke label institut hanya untuk jaga-jaga kalau field ini kosong
+ * (mis. sesi lama sebelum field ini ada, atau error saat resolve di backend).
+ */
 export function getRoleScopeLabel(entry: RoleEntry): string {
-  if (entry.kdFak) return FAKULTAS_NAMES[entry.kdFak] ?? entry.kdFak;
-  if (entry.noPs)  return PRODI_NAMES[entry.noPs]     ?? `Prodi ${entry.noPs}`;
-  return 'Institut Teknologi Bandung';
+  return entry.scopeLabel ?? INSTITUT_LABEL;
 }
 
 /**

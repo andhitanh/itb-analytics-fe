@@ -13,12 +13,16 @@ interface MeRoleEntry {
   role:         string;
   user_role_id: number;
   is_prime:     boolean;
+  // Label entitas siap-tampil, sudah dihitung backend sesuai role
+  // (nama fakultas/prodi/kk, atau "Institut Teknologi Bandung" untuk
+  // admin/direktorat). Lihat auth/role_mapper.py::_compute_scope_label.
+  scope_label:  string | null;
 }
 
 interface MeResponse {
   user_id:         number | string;
   nama:            string;
-  active_role:     { role: string; user_role_id: number };
+  active_role:     { role: string; user_role_id: number; scope_label: string | null };
   available_roles: MeRoleEntry[];
 }
 
@@ -26,11 +30,14 @@ interface MeResponse {
 
 function mapRole(r: MeRoleEntry): RoleEntry {
   return {
-    userRoleId: r.user_role_id,
-    role:       r.role as RoleEntry['role'],
-    isPrime:    r.is_prime,
+    userRoleId:  r.user_role_id,
+    role:        r.role as RoleEntry['role'],
+    isPrime:     r.is_prime,
+    scopeLabel:  r.scope_label,
     // Field-field ini tidak dikembalikan oleh /me; diisi null.
-    // Gunakan endpoint terpisah jika scope detail diperlukan.
+    // Gunakan endpoint terpisah jika scope detail (kd_fak/no_ps/kk_id
+    // mentah) diperlukan — untuk kebutuhan tampilan header, scopeLabel
+    // di atas sudah cukup dan tidak perlu di-resolve lagi di frontend.
     dosenId: null,
     kkId:    null,
     noPs:    null,
@@ -77,7 +84,14 @@ export async function postLogout(): Promise<void> {
   await api.post('/api/auth/logout');
 }
 
-export async function patchActiveRole(userRoleId: number) {
-  const { data } = await api.patch('/api/auth/role', { user_role_id: userRoleId });
+// ─── Response shape dari backend PATCH /api/auth/role ─────────────────────────
+
+interface SwitchRoleResponse {
+  active_role:     { role: string; user_role_id: number; scope_label: string | null };
+  available_roles: MeRoleEntry[];
+}
+
+export async function patchActiveRole(userRoleId: number): Promise<SwitchRoleResponse> {
+  const { data } = await api.patch<SwitchRoleResponse>('/api/auth/role', { user_role_id: userRoleId });
   return data;
 }

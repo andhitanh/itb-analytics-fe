@@ -59,9 +59,9 @@ export function GradeTrendSection({ filter, ipData, ipLoading, onDrill }: GradeT
         <CardHeader>
           <div className="flex items-start justify-between gap-2">
             <div>
-              <CardTitle>Tren Rata-Rata Nilai Mahasiswa</CardTitle>
+              <CardTitle>Tren Rata-Rata IP Mahasiswa</CardTitle>
               <CardDescription>
-                Perkembangan skor dari semester ke semester
+                Perkembangan Rata-Rata IP Mahasiswa dari semester ke semester
               </CardDescription>
             </div>
             {!isLoading && chartData.length > 0 && (
@@ -142,7 +142,7 @@ export function GradeTrendSection({ filter, ipData, ipLoading, onDrill }: GradeT
       {/* Faculty/prodi comparison — avg_ip dari endpoint grade-distribution */}
       <Card>
         <CardHeader>
-          <CardTitle>{ipData.length === 1 ? 'Rata-Rata IP' : `Rata-Rata Nilai per ${groupLabel}`}</CardTitle>
+          <CardTitle>{ipData.length === 1 ? 'Rata-Rata IP' : `Rata-Rata IP per ${groupLabel}`}</CardTitle>
           <CardDescription>
               {ipData.length === 1
               ? 'Top/bottom mata kuliah berdasarkan rata-rata IP'
