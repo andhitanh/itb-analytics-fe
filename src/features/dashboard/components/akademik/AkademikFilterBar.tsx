@@ -89,7 +89,7 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
   }, [locked.fakultas, filterOptions]);
 
   const activeCount = [
-    filter.semester.length     > 0,
+    filter.semester !== 'semua',
     filter.jenjang.length      > 0,
     filter.fakultas.length     > 0,
     filter.programStudi.length > 0,
@@ -98,9 +98,11 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
   if (isLoading) {
     return (
       <div className="bg-surface rounded-xl border border-border px-4 py-3 flex flex-col gap-3 animate-pulse">
-        <div className="h-7 w-[220px] rounded-md bg-border-mid" />
-        <div className="grid grid-cols-4 gap-2.5">
-          <div className="h-8 rounded-md bg-border-mid" />
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-[140px] rounded-md bg-border-mid" />
+          <div className="h-8 w-[140px] rounded-md bg-border-mid" />
+        </div>
+        <div className="grid grid-cols-3 gap-2.5">
           <div className="h-8 rounded-md bg-border-mid" />
           <div className="h-8 rounded-md bg-border-mid" />
           <div className="h-8 rounded-md bg-border-mid" />
@@ -112,7 +114,7 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
   return (
     <div className="bg-surface rounded-xl border border-border px-4 py-3.5 flex flex-col gap-3">
 
-      {/* Baris 1: Tahun Ajaran — single-select, wajib, terpisah secara visual */}
+      {/* Baris 1: Tahun Ajaran & Semester — single-select, sejajar, terpisah dari 4 filter multi-select */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-1.5 shrink-0">
@@ -130,6 +132,26 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
               </SelectTrigger>
               <SelectContent>
                 {filterOptions.tahun_ajaran.map(o => (
+                  <SelectItem key={o.value} value={o.value} className="text-[12px]">
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <FilterLabel>Semester</FilterLabel>
+            <Select
+              value={filter.semester}
+              onValueChange={v => onChange({ ...filter, semester: v })}
+            >
+              <SelectTrigger className="h-8 text-[12px] border-border-mid min-w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="semua" className="text-[12px]">Semua Semester</SelectItem>
+                {filterOptions.semester.map(o => (
                   <SelectItem key={o.value} value={o.value} className="text-[12px]">
                     {o.label}
                   </SelectItem>
@@ -163,15 +185,8 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
 
       <div className="h-px bg-border" />
 
-      {/* Baris 2: Semester, Jenjang, Fakultas, Program Studi — multi-select, sejajar */}
-      <div className="grid grid-cols-4 gap-2.5">
-
-        <MultiSelectDropdown
-          label="Semester"
-          options={filterOptions.semester}
-          selected={filter.semester}
-          onChange={v => onChange({ ...filter, semester: v })}
-        />
+      {/* Baris 2: Jenjang, Fakultas, Program Studi — multi-select, sejajar */}
+      <div className="grid grid-cols-3 gap-2.5">
 
         <MultiSelectDropdown
           label="Jenjang"

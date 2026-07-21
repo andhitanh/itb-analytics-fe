@@ -61,7 +61,7 @@ function FilterSummaryPill({ filter, filterOptions }: FilterSummaryPillProps) {
 
   const parts: string[] = [];
   if (filter.tahunAjaran)              parts.push(filter.tahunAjaran);
-  if (filter.semester.length > 0)      parts.push(filter.semester.map(s => semesterLabel[s] ?? s).join(', '));
+  if (filter.semester !== 'semua')     parts.push(semesterLabel[filter.semester] ?? filter.semester);
   if (filter.jenjang.length > 0)       parts.push(filter.jenjang.map(j => jenjangLabel[j] ?? j).join(', '));
   if (filter.fakultas.length > 0)      parts.push(filter.fakultas.join(', '));
   if (prodiLabels.length > 0)          parts.push(prodiLabels.join(', '));
@@ -93,7 +93,7 @@ export default function DashboardAkademik() {
     const { locked, tahun_ajaran } = filterOptions;
     setFilter({
       tahunAjaran:  tahun_ajaran[0]?.value ?? '',
-      semester:     [],
+      semester:     'semua',
       jenjang:      [],
       fakultas:     locked.fakultas ? [locked.fakultas] : [],
       programStudi: locked.prodi    ? [locked.prodi]    : [],

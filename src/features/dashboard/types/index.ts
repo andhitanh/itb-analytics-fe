@@ -7,15 +7,20 @@ export type JenjangFilter = 'S1' | 'S2' | 'S3' | 'Profesi';
 
 /**
  * Nilai semester mengikuti FilterOption.value dari backend ("1"|"2"|"3" —
- * ganjil/genap/pendek). Tetap string karena datang dari API, bukan enum tetap.
+ * ganjil/genap/pendek). Single-select seperti tahun_ajaran (semester adalah
+ * bagian dari definisi satu periode akademik, bukan kategori independen
+ * seperti jenjang/fakultas/prodi yang lazim dibandingkan/digabung), tapi
+ * beda dengan tahun_ajaran, semester TETAP punya opsi "Semua" ('semua')
+ * karena semester=None di backend valid berarti "gabungkan semua semester
+ * dalam tahun ajaran itu" — pilihan eksplisit user, bukan default tersembunyi.
  */
 export type SemesterFilter = string;
 
 export interface AkademikFilter {
   /** Single-select, wajib selalu ada nilai — tidak ada opsi "Semua". */
   tahunAjaran:  string;
-  /** Multi-select. Array kosong = "Semua Semester". */
-  semester:     SemesterFilter[];
+  /** Single-select. 'semua' = tidak difilter (semester digabung). */
+  semester:     SemesterFilter;
   /** Multi-select. Array kosong = "Semua Jenjang". */
   jenjang:      JenjangFilter[];
   /** Multi-select. Array kosong = "Semua Fakultas". */
@@ -28,7 +33,7 @@ export const DEFAULT_AKADEMIK_FILTER: AkademikFilter = {
   // Diisi otomatis dari filterOptions.tahun_ajaran[0] saat data pertama tiba
   // (lihat DashboardAkademik.tsx) — string kosong hanya state transisi awal.
   tahunAjaran:  '',
-  semester:     [],
+  semester:     'semua',
   jenjang:      [],
   fakultas:     [],
   programStudi: [],

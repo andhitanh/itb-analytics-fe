@@ -48,7 +48,7 @@ export function buildEntityComparisonChartContext(
     series: items.map(toRow),
     filters_applied: {
       ...(isSet(filter.tahunAjaran) && { tahun_ajaran: filter.tahunAjaran }),
-      ...(isSet(filter.semester) && { semester: filter.semester.map(Number) }),
+      ...(isSet(filter.semester) && { semester: [Number(filter.semester)] }),
       ...(isSet(filter.fakultas) && { kode_fakultas: filter.fakultas }),
       ...(isSet(filter.programStudi) && { no_prodi: filter.programStudi.map(Number) }),
     },

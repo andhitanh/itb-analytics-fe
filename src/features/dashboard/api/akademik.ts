@@ -54,10 +54,10 @@ export interface StatsOverviewResponse {
 
 /**
  * Bangun query params dari AkademikFilter.
- * Array kosong berarti "tidak difilter" — tidak dikirim ke backend sama
- * sekali. semester, fakultas, no_ps, dan jenjang semuanya multi-select dan
+ * tahun_ajaran & semester single-value ('semua' berarti tidak difilter,
+ * tidak dikirim ke backend). fakultas, no_ps, dan jenjang multi-select,
  * dikirim sebagai repeated key (?fakultas=STEI&fakultas=SBM) sesuai
- * FastAPI list[str] via Depends(). tahun_ajaran tetap single-value wajib.
+ * FastAPI list[str] via Depends().
  *
  * extra: param tambahan di luar filter standar (mis. kode_grup, limit,
  * n_semester) yang dibutuhkan endpoint tertentu.
@@ -68,8 +68,8 @@ function buildAkademikParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filter.tahunAjaran) params.set('tahun_ajaran', filter.tahunAjaran);
-  filter.semester.forEach(s => params.append('semester', s));
+  if (filter.tahunAjaran)          params.set('tahun_ajaran', filter.tahunAjaran);
+  if (filter.semester !== 'semua') params.set('semester', filter.semester);
   filter.fakultas.forEach(f => params.append('fakultas', f));
   filter.programStudi.forEach(p => params.append('no_ps', p));
   filter.jenjang.forEach(j => params.append('jenjang', j));
@@ -156,7 +156,7 @@ export async function fetchAkademikGradeTrend(
     '/api/dashboard/akademik/grade-trend',
     {
       params: buildAkademikParams(
-        { ...filter, semester: [] },
+        { ...filter, semester: 'semua' },
         { n_semester: nSemester },
       ),
       signal,

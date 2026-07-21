@@ -153,7 +153,7 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
                 </CardTitle>
                 <CardDescription>
                   {filter.tahunAjaran || 'Memuat tahun ajaran...'}
-                  {filter.semester.length > 0 ? ` · ${filter.semester.join(', ')}` : ''}
+                  {filter.semester !== 'semua' ? ` · ${filter.semester}` : ''}
                   {' · outline merah = bottom 3 per baris'}
                 </CardDescription>
               </div>
