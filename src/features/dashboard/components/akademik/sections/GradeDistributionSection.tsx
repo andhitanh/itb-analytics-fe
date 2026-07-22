@@ -80,7 +80,7 @@ function GradePie({ items }: { items: GradeDistItem[] }) {
         <text x={75} y={83} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 10, fill: '#9BAAC4' }}>Lulus</text>
       </PieChart>
       <div>
-        <p className="text-[11px] text-neutral font-semibold mb-2 uppercase tracking-wide">Sebaran Nilai ITB</p>
+        <p className="text-[11px] text-neutral font-semibold mb-2 uppercase tracking-wide">Sebaran Nilai</p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
           {gradeEntries.map(({ grade, pct }) => (
             <div key={grade} className="flex items-center gap-1.5">
@@ -177,7 +177,9 @@ export function GradeDistributionSection({ filter, data, isLoading }: GradeDistr
     <div className="grid grid-cols-[380px_1fr] gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>Distribusi Nilai Kelulusan {filter.fakultas.length > 0 ? filter.fakultas.join(', ') : 'ITB'}</CardTitle>
+          <CardTitle>
+            Distribusi Grade Nilai Mahasiswa
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (

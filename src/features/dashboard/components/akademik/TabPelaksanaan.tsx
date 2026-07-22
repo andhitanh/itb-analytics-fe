@@ -73,7 +73,7 @@ function SubTabRancangan({ filter, onDrill }: { filter: AkademikFilter; onDrill:
         <Card>
           <CardHeader>
             <CardTitle>Tren Q8 - Kesesuaian Beban Kerja Lintas Semester</CardTitle>
-            <CardDescription>Rata-rata skor Q8 se-ITB · garis merah = threshold 3.0</CardDescription>
+            <CardDescription>Rata-rata skor Q8 · garis merah = threshold 3.0</CardDescription>
           </CardHeader>
           <CardContent>
             {trendLoading ? (
