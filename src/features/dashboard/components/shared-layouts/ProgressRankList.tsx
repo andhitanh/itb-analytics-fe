@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,11 @@ export interface ProgressRankItem {
   sublabel?:      string;
   /** Warna CSS untuk sublabel */
   sublabelColor?: string;
+  /**
+   * Teks lengkap untuk tooltip saat hover (mis. pertanyaan kuesioner utuh,
+   * tanpa dipotong). Kalau tidak diisi, tooltip memakai `label` apa adanya.
+   */
+  fullLabel?:     string;
 }
 
 interface ProgressRankListProps {
@@ -47,6 +53,7 @@ export function ProgressRankList({
   const rankClass   = mode === 'top' ? 'text-score-high-text' : 'text-score-low-text';
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="flex flex-col gap-2">
       {items.map((item, i) => {
         const barPct = Math.min(
@@ -57,8 +64,8 @@ export function ProgressRankList({
           ),
         );
 
-        return (
-          <div key={i} className="flex items-center gap-2.5">
+        const rowContent = (
+          <div className="flex items-center gap-2.5 cursor-default">
 
             {/* Nomor urut — disembunyikan kalau cuma 1 entitas (tidak ada yang diperingkat) */}
             {showRank && (
@@ -114,7 +121,23 @@ export function ProgressRankList({
 
           </div>
         );
+
+        return (
+          <Tooltip key={i}>
+            <TooltipTrigger asChild>
+              {rowContent}
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[280px] whitespace-normal text-left">
+              <span>
+                {item.fullLabel ?? item.label}
+                {' — '}
+                <span className="font-semibold">Skor : {item.value.toFixed(2)}</span>
+              </span>
+            </TooltipContent>
+          </Tooltip>
+        );
       })}
     </div>
+    </TooltipProvider>
   );
 }

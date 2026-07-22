@@ -82,10 +82,11 @@ export default function TabInfoUmum({ filter, onDrill }: TabInfoUmumProps) {
   // "skor terendah").
   const allQItems = avgPerQ
     .map((v, i) => ({
-      label: `${QUESTIONS_SHORT[i]}: ${QUESTIONS_FULL[i].slice(0, 58)}…`,
-      value: v,
+      label:     `${QUESTIONS_SHORT[i]}: ${QUESTIONS_FULL[i].slice(0, 58)}…`,
+      fullLabel: `${QUESTIONS_SHORT[i]}: ${QUESTIONS_FULL[i]}`,
+      value:     v,
     }))
-    .filter((item): item is { label: string; value: number } => item.value !== null);
+    .filter((item): item is { label: string; fullLabel: string; value: number } => item.value !== null);
   const topQItems    = [...allQItems].sort((a, b) => b.value - a.value).slice(0, 6);
   const bottomQItems = [...allQItems].sort((a, b) => a.value - b.value).slice(0, 6);
 
