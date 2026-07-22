@@ -1,4 +1,5 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TrendBadge }           from '@/components/ui/domain-badges';
 import { ProgressRankList }     from '@/features/dashboard/components/shared-layouts/ProgressRankList';
 import { EntityAwareChart }     from '@/features/dashboard/components/shared-charts/EntityAwareChart';
@@ -101,11 +102,22 @@ export default function TabLuaran({ filter, onDrill }: TabLuaranProps) {
         </CardContent>
       </Card>
 
-      {/* Q1, Q2, Q3 individual */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-[12px] font-semibold text-text-dark mb-2">Q1 — Informasi Luaran MK</p>
+      {/* Q1, Q2, Q3 individual.
+          Mode Kaprodi/Kadep (1 entitas → EntityAwareChart merender
+          CourseRankingSection dengan kartu Bottom5/Top5) dulu dipaksa
+          grid-cols-3, sehingga tiap kartu pecah lagi jadi 2 sub-kolom →
+          6 kolom sempit berdesakan. Ganti jadi Tabs: satu pertanyaan
+          tampil penuh lebar, ganti tab untuk lihat yang lain.
+          Mode Direktorat/Dekan (>1 entitas → HBarChart perbandingan)
+          tetap grid-cols-3 seperti semula karena memang sudah pas. */}
+      {qGroupItems.length === 1 ? (
+        <Tabs defaultValue="q21">
+          <TabsList className="w-full h-auto p-1">
+            <TabsTrigger value="q21" className="flex-1 py-1.5">Q1 — Informasi Luaran MK</TabsTrigger>
+            <TabsTrigger value="q22" className="flex-1 py-1.5">Q2 — Perkuliahan ke Luaran</TabsTrigger>
+            <TabsTrigger value="q23" className="flex-1 py-1.5">Q3 — Mahasiswa Mencapai Luaran</TabsTrigger>
+          </TabsList>
+          <TabsContent value="q21">
             <EntityAwareChart
               items={toHBarData(q1Data)}
               color={chartColors.primary}
@@ -116,11 +128,8 @@ export default function TabLuaran({ filter, onDrill }: TabLuaranProps) {
               courseRankingTitle="Q1 — Informasi Luaran MK"
               onDrill={onDrill}
             />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-[12px] font-semibold text-text-dark mb-2">Q2 — Perkuliahan ke Luaran</p>
+          </TabsContent>
+          <TabsContent value="q22">
             <EntityAwareChart
               items={toHBarData(q2Data)}
               color={chartColors.mid}
@@ -131,11 +140,8 @@ export default function TabLuaran({ filter, onDrill }: TabLuaranProps) {
               courseRankingTitle="Q2 — Perkuliahan ke Luaran"
               onDrill={onDrill}
             />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-[12px] font-semibold text-text-dark mb-2">Q3 — Mahasiswa Mencapai Luaran</p>
+          </TabsContent>
+          <TabsContent value="q23">
             <EntityAwareChart
               items={toHBarData(q3Data)}
               color={chartColors.light}
@@ -146,9 +152,57 @@ export default function TabLuaran({ filter, onDrill }: TabLuaranProps) {
               courseRankingTitle="Q3 — Mahasiswa Mencapai Luaran"
               onDrill={onDrill}
             />
-          </CardContent>
-        </Card>
-      </div>
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <div className="grid grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-5">
+              <p className="text-[12px] font-semibold text-text-dark mb-2">Q1 — Informasi Luaran MK</p>
+              <EntityAwareChart
+                items={toHBarData(q1Data)}
+                color={chartColors.primary}
+                domain={[3.0, 4.0]}
+                height={300}
+                filter={filter}
+                courseRankingMetric="q21"
+                courseRankingTitle="Q1 — Informasi Luaran MK"
+                onDrill={onDrill}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-5">
+              <p className="text-[12px] font-semibold text-text-dark mb-2">Q2 — Perkuliahan ke Luaran</p>
+              <EntityAwareChart
+                items={toHBarData(q2Data)}
+                color={chartColors.mid}
+                domain={[3.0, 4.0]}
+                height={300}
+                filter={filter}
+                courseRankingMetric="q22"
+                courseRankingTitle="Q2 — Perkuliahan ke Luaran"
+                onDrill={onDrill}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-5">
+              <p className="text-[12px] font-semibold text-text-dark mb-2">Q3 — Mahasiswa Mencapai Luaran</p>
+              <EntityAwareChart
+                items={toHBarData(q3Data)}
+                color={chartColors.light}
+                domain={[3.0, 4.0]}
+                height={300}
+                filter={filter}
+                courseRankingMetric="q23"
+                courseRankingTitle="Q3 — Mahasiswa Mencapai Luaran"
+                onDrill={onDrill}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
     </div>
   );

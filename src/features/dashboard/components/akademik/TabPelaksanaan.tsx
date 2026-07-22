@@ -246,17 +246,20 @@ function SubTabPerformaDosen({ filter, onDrill }: { filter: AkademikFilter; onDr
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4">
+      {/* Kehadiran + agregasi Q4-Q7: stacked (3-baris) HANYA mode
+          Kaprodi/Kadep (1 entitas). Mode Direktorat/Dekan (>1 entitas)
+          tetap side-by-side seperti semula. */}
+      <div className={q4q7Items.length === 1 ? 'flex flex-col gap-4' : 'grid grid-cols-2 gap-4'}>
         <Card>
           <CardHeader>
             <CardTitle>Rata-Rata Kehadiran Dosen per {filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas'}</CardTitle>
-            <CardDescription>Diurutkan dari tertinggi</CardDescription>
+            {/* <CardDescription>Diurutkan dari tertinggi</CardDescription> */}
           </CardHeader>
           <CardContent>
             <AttendanceSection
               filter={filter}
               type="lecturer"
-              avgLabel="Rata-rata kehadiran dosen se-ITB"
+              avgLabel="Rata-rata kehadiran dosen"
               color={chartColors.primary}
             />
           </CardContent>
@@ -294,42 +297,86 @@ function SubTabPerformaDosen({ filter, onDrill }: { filter: AkademikFilter; onDr
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card><CardContent className="pt-5">
-          <p className="text-[12px] font-semibold text-text-dark mb-2">Q4 — Perkuliahan Terorganisir</p>
-          <EntityAwareChart
-            items={toHBarData(q4Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
-            filter={filter} courseRankingMetric="q24" courseRankingTitle="Q4 — Perkuliahan Terorganisir"
-            onDrill={onDrill}
-          />
-        </CardContent></Card>
-        <Card><CardContent className="pt-5">
-          <p className="text-[12px] font-semibold text-text-dark mb-2">Q5 — Komunikasi Efektif</p>
-          <EntityAwareChart
-            items={toHBarData(q5Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
-            filter={filter} courseRankingMetric="q25" courseRankingTitle="Q5 — Komunikasi Efektif"
-            onDrill={onDrill}
-          />
-        </CardContent></Card>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <Card><CardContent className="pt-5">
-          <p className="text-[12px] font-semibold text-text-dark mb-2">Q6 — Dosen Peduli Pencapaian</p>
-          <EntityAwareChart
-            items={toHBarData(q6Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
-            filter={filter} courseRankingMetric="q26" courseRankingTitle="Q6 — Dosen Peduli Pencapaian"
-            onDrill={onDrill}
-          />
-        </CardContent></Card>
-        <Card><CardContent className="pt-5">
-          <p className="text-[12px] font-semibold text-text-dark mb-2">Q7 — Dosen Berlaku Adil</p>
-          <EntityAwareChart
-            items={toHBarData(q7Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
-            filter={filter} courseRankingMetric="q27" courseRankingTitle="Q7 — Dosen Berlaku Adil"
-            onDrill={onDrill}
-          />
-        </CardContent></Card>
-      </div>
+      {/* Q4-Q7 individual. Mode Kaprodi/Kadep (1 entitas → kartu
+          Bottom5/Top5) dulu dipaksa 2x(grid-cols-2) = 4 kartu 2 kolom
+          masing-masing pecah lagi jadi 2 sub-kolom → sempit. Ganti Tabs. */}
+      {q4q7Items.length === 1 ? (
+        <Tabs defaultValue="q24">
+          <TabsList className="w-full h-auto p-1">
+            <TabsTrigger value="q24" className="flex-1 py-1.5">Q4 — Terorganisir</TabsTrigger>
+            <TabsTrigger value="q25" className="flex-1 py-1.5">Q5 — Komunikasi</TabsTrigger>
+            <TabsTrigger value="q26" className="flex-1 py-1.5">Q6 — Peduli</TabsTrigger>
+            <TabsTrigger value="q27" className="flex-1 py-1.5">Q7 — Adil</TabsTrigger>
+          </TabsList>
+          <TabsContent value="q24">
+            <EntityAwareChart
+              items={toHBarData(q4Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q24" courseRankingTitle="Q4 — Perkuliahan Terorganisir"
+              onDrill={onDrill}
+            />
+          </TabsContent>
+          <TabsContent value="q25">
+            <EntityAwareChart
+              items={toHBarData(q5Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q25" courseRankingTitle="Q5 — Komunikasi Efektif"
+              onDrill={onDrill}
+            />
+          </TabsContent>
+          <TabsContent value="q26">
+            <EntityAwareChart
+              items={toHBarData(q6Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q26" courseRankingTitle="Q6 — Dosen Peduli Pencapaian"
+              onDrill={onDrill}
+            />
+          </TabsContent>
+          <TabsContent value="q27">
+            <EntityAwareChart
+              items={toHBarData(q7Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q27" courseRankingTitle="Q7 — Dosen Berlaku Adil"
+              onDrill={onDrill}
+            />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <Card><CardContent className="pt-5">
+              <p className="text-[12px] font-semibold text-text-dark mb-2">Q4 — Perkuliahan Terorganisir</p>
+              <EntityAwareChart
+                items={toHBarData(q4Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+                filter={filter} courseRankingMetric="q24" courseRankingTitle="Q4 — Perkuliahan Terorganisir"
+                onDrill={onDrill}
+              />
+            </CardContent></Card>
+            <Card><CardContent className="pt-5">
+              <p className="text-[12px] font-semibold text-text-dark mb-2">Q5 — Komunikasi Efektif</p>
+              <EntityAwareChart
+                items={toHBarData(q5Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+                filter={filter} courseRankingMetric="q25" courseRankingTitle="Q5 — Komunikasi Efektif"
+                onDrill={onDrill}
+              />
+            </CardContent></Card>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Card><CardContent className="pt-5">
+              <p className="text-[12px] font-semibold text-text-dark mb-2">Q6 — Dosen Peduli Pencapaian</p>
+              <EntityAwareChart
+                items={toHBarData(q6Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+                filter={filter} courseRankingMetric="q26" courseRankingTitle="Q6 — Dosen Peduli Pencapaian"
+                onDrill={onDrill}
+              />
+            </CardContent></Card>
+            <Card><CardContent className="pt-5">
+              <p className="text-[12px] font-semibold text-text-dark mb-2">Q7 — Dosen Berlaku Adil</p>
+              <EntityAwareChart
+                items={toHBarData(q7Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+                filter={filter} courseRankingMetric="q27" courseRankingTitle="Q7 — Dosen Berlaku Adil"
+                onDrill={onDrill}
+              />
+            </CardContent></Card>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -360,17 +407,20 @@ function SubTabPerformaMahasiswa({ filter, onDrill }: { filter: AkademikFilter; 
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-4">
+      {/* Kehadiran + agregasi Q11-Q12: stacked (3-baris) HANYA mode
+          Kaprodi/Kadep (1 entitas). Mode Direktorat/Dekan (>1 entitas)
+          tetap side-by-side seperti semula. */}
+      <div className={q11q12Items.length === 1 ? 'flex flex-col gap-4' : 'grid grid-cols-2 gap-4'}>
         <Card>
           <CardHeader>
             <CardTitle>Rata-Rata Kehadiran Mahasiswa per {filter.fakultas.length > 0 ? 'Prodi' : 'Fakultas'}</CardTitle>
-            <CardDescription>Diurutkan dari tertinggi</CardDescription>
+            {/* <CardDescription>Diurutkan dari tertinggi</CardDescription> */}
           </CardHeader>
           <CardContent>
             <AttendanceSection
               filter={filter}
               type="student"
-              avgLabel="Rata-rata kehadiran mahasiswa se-ITB"
+              avgLabel="Rata-rata kehadiran mahasiswa"
               color={chartColors.mid}
             />
           </CardContent>
@@ -408,24 +458,47 @@ function SubTabPerformaMahasiswa({ filter, onDrill }: { filter: AkademikFilter; 
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card><CardContent className="pt-5">
-          <p className="text-[12px] font-semibold text-text-dark mb-2">Q11 — Mahasiswa Berusaha Sungguh-sungguh</p>
-          <EntityAwareChart
-            items={toHBarData(q11Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
-            filter={filter} courseRankingMetric="q35" courseRankingTitle="Q11 — Mahasiswa Berusaha Sungguh-Sungguh"
-            onDrill={onDrill}
-          />
-        </CardContent></Card>
-        <Card><CardContent className="pt-5">
-          <p className="text-[12px] font-semibold text-text-dark mb-2">Q12 — Pengalaman Belajar Positif</p>
-          <EntityAwareChart
-            items={toHBarData(q12Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
-            filter={filter} courseRankingMetric="q37" courseRankingTitle="Q12 — Pengalaman Belajar Positif"
-            onDrill={onDrill}
-          />
-        </CardContent></Card>
-      </div>
+      {q11q12Items.length === 1 ? (
+        <Tabs defaultValue="q35">
+          <TabsList className="w-full h-auto p-1">
+            <TabsTrigger value="q35" className="flex-1 py-1.5">Q11 — Berusaha Sungguh-sungguh</TabsTrigger>
+            <TabsTrigger value="q37" className="flex-1 py-1.5">Q12 — Pengalaman Positif</TabsTrigger>
+          </TabsList>
+          <TabsContent value="q35">
+            <EntityAwareChart
+              items={toHBarData(q11Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q35" courseRankingTitle="Q11 — Mahasiswa Berusaha Sungguh-Sungguh"
+              onDrill={onDrill}
+            />
+          </TabsContent>
+          <TabsContent value="q37">
+            <EntityAwareChart
+              items={toHBarData(q12Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q37" courseRankingTitle="Q12 — Pengalaman Belajar Positif"
+              onDrill={onDrill}
+            />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <Card><CardContent className="pt-5">
+            <p className="text-[12px] font-semibold text-text-dark mb-2">Q11 — Mahasiswa Berusaha Sungguh-sungguh</p>
+            <EntityAwareChart
+              items={toHBarData(q11Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q35" courseRankingTitle="Q11 — Mahasiswa Berusaha Sungguh-Sungguh"
+              onDrill={onDrill}
+            />
+          </CardContent></Card>
+          <Card><CardContent className="pt-5">
+            <p className="text-[12px] font-semibold text-text-dark mb-2">Q12 — Pengalaman Belajar Positif</p>
+            <EntityAwareChart
+              items={toHBarData(q12Data)} color={chartColors.primary} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q37" courseRankingTitle="Q12 — Pengalaman Belajar Positif"
+              onDrill={onDrill}
+            />
+          </CardContent></Card>
+        </div>
+      )}
     </div>
   );
 }
@@ -486,24 +559,47 @@ function SubTabSarana({ filter, onDrill }: { filter: AkademikFilter; onDrill: (k
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card><CardContent className="pt-5">
-          <p className="text-[12px] font-semibold text-text-dark mb-2">Q9 — Sarana Prasarana Memadai</p>
-          <EntityAwareChart
-            items={toHBarData(q9Data)} color={chartColors.warning} domain={[3.0, 4.0]} height={300}
-            filter={filter} courseRankingMetric="q29" courseRankingTitle="Q9 — Sarana Prasarana Memadai"
-            onDrill={onDrill}
-          />
-        </CardContent></Card>
-        <Card><CardContent className="pt-5">
-          <p className="text-[12px] font-semibold text-text-dark mb-2">Q10 — Fasilitas Pendukung di Luar Kuliah</p>
-          <EntityAwareChart
-            items={toHBarData(q10Data)} color={chartColors.light} domain={[3.0, 4.0]} height={300}
-            filter={filter} courseRankingMetric="q30" courseRankingTitle="Q10 — Fasilitas Pendukung di Luar Kuliah"
-            onDrill={onDrill}
-          />
-        </CardContent></Card>
-      </div>
+      {q9q10Items.length === 1 ? (
+        <Tabs defaultValue="q29">
+          <TabsList className="w-full h-auto p-1">
+            <TabsTrigger value="q29" className="flex-1 py-1.5">Q9 — Sarana Memadai</TabsTrigger>
+            <TabsTrigger value="q30" className="flex-1 py-1.5">Q10 — Fasilitas Pendukung</TabsTrigger>
+          </TabsList>
+          <TabsContent value="q29">
+            <EntityAwareChart
+              items={toHBarData(q9Data)} color={chartColors.warning} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q29" courseRankingTitle="Q9 — Sarana Prasarana Memadai"
+              onDrill={onDrill}
+            />
+          </TabsContent>
+          <TabsContent value="q30">
+            <EntityAwareChart
+              items={toHBarData(q10Data)} color={chartColors.light} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q30" courseRankingTitle="Q10 — Fasilitas Pendukung di Luar Kuliah"
+              onDrill={onDrill}
+            />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <div className="grid grid-cols-2 gap-4">
+          <Card><CardContent className="pt-5">
+            <p className="text-[12px] font-semibold text-text-dark mb-2">Q9 — Sarana Prasarana Memadai</p>
+            <EntityAwareChart
+              items={toHBarData(q9Data)} color={chartColors.warning} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q29" courseRankingTitle="Q9 — Sarana Prasarana Memadai"
+              onDrill={onDrill}
+            />
+          </CardContent></Card>
+          <Card><CardContent className="pt-5">
+            <p className="text-[12px] font-semibold text-text-dark mb-2">Q10 — Fasilitas Pendukung di Luar Kuliah</p>
+            <EntityAwareChart
+              items={toHBarData(q10Data)} color={chartColors.light} domain={[3.0, 4.0]} height={300}
+              filter={filter} courseRankingMetric="q30" courseRankingTitle="Q10 — Fasilitas Pendukung di Luar Kuliah"
+              onDrill={onDrill}
+            />
+          </CardContent></Card>
+        </div>
+      )}
     </div>
   );
 }
