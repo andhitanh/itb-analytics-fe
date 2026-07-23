@@ -16,6 +16,7 @@ import {
   DEFAULT_AKADEMIK_FILTER,
 } from '@/features/dashboard/types';
 import type { AkademikFilterOptionsResponse } from '@/features/dashboard/api/akademik';
+import { cn } from '@/lib/utils';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -51,11 +52,25 @@ interface AkademikFilterBarProps {
   filter:        AkademikFilter;
   onChange:      (f: AkademikFilter) => void;
   filterOptions: AkademikFilterOptionsResponse | null;
+  /**
+   * true untuk dashboard dosen — scope-nya sudah terkunci ke dosen_id di
+   * backend (bukan fakultas/prodi), jadi dropdown Fakultas & Program Studi
+   * tidak relevan ditampilkan sama sekali (bukan sekadar dikunci/disabled,
+   * tapi memang bukan dimensi yang dipakai endpoint dosen). Default false
+   * supaya DashboardAkademik.tsx (kaprodi/dekan/direktorat) tidak berubah
+   * perilakunya sama sekali.
+   */
+  hideEntitasFilter?: boolean;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikFilterBarProps) {
+export function AkademikFilterBar({
+  filter,
+  onChange,
+  filterOptions,
+  hideEntitasFilter = false,
+}: AkademikFilterBarProps) {
   const isLoading = filterOptions === null;
   const locked    = filterOptions?.locked ?? { fakultas: null, prodi: null };
 
@@ -114,7 +129,7 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
   return (
     <div className="bg-surface rounded-xl border border-border px-4 py-3.5 flex flex-col gap-3">
 
-      {/* Baris 1: Tahun Ajaran & Semester — single-select, sejajar, terpisah dari 4 filter multi-select */}
+      {/* Baris 1: Tahun Ajaran & Semester — single-select, sejajar, terpisah dari filter multi-select */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-1.5 shrink-0">
@@ -185,8 +200,14 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
 
       <div className="h-px bg-border" />
 
-      {/* Baris 2: Jenjang, Fakultas, Program Studi — multi-select, sejajar */}
-      <div className="grid grid-cols-3 gap-2.5">
+      {/* Baris 2: Jenjang selalu tampil. Fakultas & Program Studi hanya untuk
+          role non-dosen — lihat dokumentasi prop hideEntitasFilter di atas. */}
+      <div
+        className={cn(
+          'grid gap-2.5',
+          hideEntitasFilter ? 'grid-cols-1 max-w-[240px]' : 'grid-cols-3',
+        )}
+      >
 
         <MultiSelectDropdown
           label="Jenjang"
@@ -195,36 +216,40 @@ export function AkademikFilterBar({ filter, onChange, filterOptions }: AkademikF
           onChange={v => onChange({ ...filter, jenjang: v as JenjangFilter[], programStudi: [] })}
         />
 
-        {locked.fakultas ? (
-          <div className="flex items-center gap-1.5">
-            <LockedLabel
-              label={lockedFakLabel ?? locked.fakultas}
-              reason="Tampilan Anda dikunci ke fakultas ini sesuai wewenang akun Anda."
-            />
-          </div>
-        ) : (
-          <MultiSelectDropdown
-            label="Fakultas"
-            options={filterOptions.fakultas}
-            selected={filter.fakultas}
-            onChange={v => onChange({ ...filter, fakultas: v, programStudi: [] })}
-          />
-        )}
+        {!hideEntitasFilter && (
+          <>
+            {locked.fakultas ? (
+              <div className="flex items-center gap-1.5">
+                <LockedLabel
+                  label={lockedFakLabel ?? locked.fakultas}
+                  reason="Tampilan Anda dikunci ke fakultas ini sesuai wewenang akun Anda."
+                />
+              </div>
+            ) : (
+              <MultiSelectDropdown
+                label="Fakultas"
+                options={filterOptions.fakultas}
+                selected={filter.fakultas}
+                onChange={v => onChange({ ...filter, fakultas: v, programStudi: [] })}
+              />
+            )}
 
-        {locked.prodi ? (
-          <div className="flex items-center gap-1.5">
-            <LockedLabel
-              label={lockedProdiLabel ?? locked.prodi}
-              reason="Tampilan Anda dikunci ke program studi ini sesuai wewenang akun Anda."
-            />
-          </div>
-        ) : (
-          <MultiSelectDropdown
-            label="Program Studi"
-            options={prodiOptions}
-            selected={filter.programStudi}
-            onChange={v => onChange({ ...filter, programStudi: v })}
-          />
+            {locked.prodi ? (
+              <div className="flex items-center gap-1.5">
+                <LockedLabel
+                  label={lockedProdiLabel ?? locked.prodi}
+                  reason="Tampilan Anda dikunci ke program studi ini sesuai wewenang akun Anda."
+                />
+              </div>
+            ) : (
+              <MultiSelectDropdown
+                label="Program Studi"
+                options={prodiOptions}
+                selected={filter.programStudi}
+                onChange={v => onChange({ ...filter, programStudi: v })}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
