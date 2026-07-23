@@ -41,7 +41,7 @@ export function TabPenilaianDosen({ filter }: TabPenilaianDosenProps) {
       <Card>
         <CardHeader>
           <CardTitle>Rata-Rata Hasil Kuesioner Mahasiswa per Kategori</CardTitle>
-          <CardDescription>Klik salah satu kategori untuk melihat rincian per pertanyaan</CardDescription>
+          <CardDescription>Klik 2x salah satu kategori untuk melihat rincian nilai per pertanyaan kuesioner</CardDescription>
         </CardHeader>
         <CardContent>
           {kategoriLoading ? (
