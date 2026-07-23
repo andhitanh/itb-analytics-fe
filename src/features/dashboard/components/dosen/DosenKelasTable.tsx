@@ -97,7 +97,7 @@ export function DosenKelasTable({ filter }: DosenKelasTableProps) {
               </td>
               <td className="py-2 px-2.5 text-text-dark">{item.nama_matkul_id}</td>
               <td className="py-2 px-2.5 text-neutral whitespace-nowrap">
-                Kelas {item.no_kelas}
+                K{item.no_kelas}
               </td>
               <td className="py-2 px-2.5 text-right text-text-dark">
                 {item.jumlah_mahasiswa}
