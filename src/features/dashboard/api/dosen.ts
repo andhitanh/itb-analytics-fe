@@ -1,6 +1,8 @@
 // src/features/dashboard/api/dosen.ts
 import api from '@/lib/axios';
 import type { AkademikFilter } from '@/features/dashboard/types';
+import type { KomentarResponse } from '@/features/dashboard/api/akademik'; // reuse tipe yang sama
+
 
 // ─── Param builder ──────────────────────────────────────────────────────────
 
@@ -243,6 +245,19 @@ export async function fetchDosenSkorPertanyaan(
   const { data } = await api.get<DosenSkorPertanyaanResponse>(
     '/api/dashboard/dosen/skor-pertanyaan',
     { params: buildDosenParams(filter, { kode_kategori: kodeKategori }), signal },
+  );
+  return data;
+}
+
+export async function fetchDosenRefleksi(
+  filter:    AkademikFilter,
+  page:      number,
+  signal?:   AbortSignal,
+  pageSize:  number = 10,
+): Promise<KomentarResponse> {
+  const { data } = await api.get<KomentarResponse>(
+    '/api/dashboard/dosen/refleksi',
+    { params: buildDosenParams(filter, { page, page_size: pageSize }), signal },
   );
   return data;
 }
